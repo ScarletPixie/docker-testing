@@ -1,0 +1,4 @@
+alter user 'root'@'localhost' identified by 'sal1';
+create user 'akino'@'%' identified by 'sal2';
+grant all privileges on *.* to 'akino'@'%' with grant option;
+flush privileges;
