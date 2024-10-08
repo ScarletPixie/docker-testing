@@ -1,0 +1,15 @@
+services:
+  mariadb:
+    build: ./requirements/mariadb/
+    volumes:
+      - mariadb_vol:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+volumes:
+  mariadb_vol:
+    driver: local
+    driver_opts:
+      type: bind
+      o: bind
+      device: ${MARIADB_VOL}
