@@ -1,15 +1,65 @@
 services:
   mariadb:
+    restart: always
     build: ./requirements/mariadb/
     volumes:
       - mariadb_vol:/var/lib/mysql
+    env_file:
+      - .env
+    environment:
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATADIR=${MYSQL_DATADIR}
+    networks:
+      - wordpress
+
+  wordpress:
+    restart: always
+    build: ./requirements/wordpress/
+    networks:
+      - wordpress
+    depends_on:
+      - mariadb
+    volumes:
+      - wordpress_vol:/var/www/html
+
+  nginx:
+    restart: always
+    build: ./requirements/nginx/
     ports:
-      - "3306:3306"
+      - 443:443
+      - 80:80
+    networks:
+      - nginx
+      - wordpress
+    depends_on:
+      - wordpress
+    volumes:
+      - wordpress_vol:/var/www/html
+
+networks:
+# nginx - 9000 - wordpress - 3306 - mariadb
+  wordpress:
+    driver: bridge
+
+# host - 443 - nginx
+  nginx:
+    driver: bridge
+
 
 volumes:
+# mariadb databases
   mariadb_vol:
     driver: local
     driver_opts:
       type: bind
       o: bind
       device: ${MARIADB_VOL}
+
+# wordpress website data
+  wordpress_vol:
+    driver: local
+    driver_opts:
+      type: bind
+      o: bind
+      device: ${WORDPRESS_VOL}

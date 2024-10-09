@@ -80,6 +80,19 @@ clean:	stop
 		echo "make clean: no containers were found, skipping..."; \
 	fi
 
+#	remove docker networks
+	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_nginx))" ]; then \
+		docker network rm $(name)_$(services_nginx); \
+	else \
+		echo "no mariadb network set up, skipping..."; \
+	fi
+	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_wordpress))" ]; then \
+		docker network rm $(name)_$(services_wordpress); \
+	else \
+		echo "no wordpress network set up, skipping..."; \
+	fi
+
+
 fclean:	clean
 	sudo rm -rf ${HOME}/data
 
