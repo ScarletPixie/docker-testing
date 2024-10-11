@@ -1,49 +1,58 @@
 services:
   mariadb:
+    user: "1001:1001"
+    container_name: inception_mariadb
     restart: always
-    build: ./requirements/mariadb/
+    build:
+      context: ./requirements/mariadb/
+      dockerfile: Dockerfile
+      args:
+      - MYSQL_USER_ARG=${MYSQL_USER}
+      - MYSQL_PASSWORD_ARG=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD_ARG=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATADIR_ARG=${MYSQL_DATADIR}
     volumes:
       - mariadb_vol:/var/lib/mysql
-    env_file:
-      - .env
-    environment:
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_DATADIR=${MYSQL_DATADIR}
     networks:
-      - wordpress
+      - mariadb_to_wordpress
 
   wordpress:
+    container_name: inception_wordpress
     restart: always
     build: ./requirements/wordpress/
     networks:
-      - wordpress
+      - mariadb_to_wordpress
+      - wordpress_to_nginx
     depends_on:
       - mariadb
     volumes:
       - wordpress_vol:/var/www/html
 
   nginx:
+    container_name: inception_nginx
     restart: always
     build: ./requirements/nginx/
     ports:
       - 443:443
-      - 80:80
     networks:
-      - nginx
-      - wordpress
+      - nginx_to_host
+      - wordpress_to_nginx
     depends_on:
       - wordpress
     volumes:
       - wordpress_vol:/var/www/html
 
 networks:
-# nginx - 9000 - wordpress - 3306 - mariadb
-  wordpress:
+# mariadb <-> wordpress
+  mariadb_to_wordpress:
     driver: bridge
 
-# host - 443 - nginx
-  nginx:
+# wordpress <-> nginx
+  wordpress_to_nginx:
+    driver: bridge
+
+# nginx <-> host
+  nginx_to_host:
     driver: bridge
 
 

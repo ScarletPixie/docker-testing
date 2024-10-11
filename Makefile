@@ -21,17 +21,18 @@ create:	${mariadb_vol} ${wordpress_vol}
 #	create volume directories
 ${mariadb_vol}:
 	mkdir -p ${mariadb_vol}
+	chmod -R 770 ${mariadb_vol}
 ${wordpress_vol}:
 	mkdir -p ${wordpress_vol}
-
+	chmod -R 770 ${wordpress_vol}
 
 #	cleanup	
 stop:
 #	if a container with inception_ prefix is found, iterate through every possible container and stop it
 	@if [ -n "$$(docker ps -q -f name=$(name))" ]; then \
-		nginx_containers="$$(docker ps -q -f name=$(name)-$(services_nginx)-)"; \
-		wordpress_containers="$$(docker ps -q -f name=$(name)-$(services_wordpress)-)"; \
-		mariadb_containers="$$(docker ps -q -f name=$(name)-$(services_mariadb)-)"; \
+		nginx_containers="$$(docker ps -q -f name=$(name)_$(services_nginx))"; \
+		wordpress_containers="$$(docker ps -q -f name=$(name)_$(services_wordpress))"; \
+		mariadb_containers="$$(docker ps -q -f name=$(name)_$(services_mariadb))"; \
 		for container in $$nginx_containers $$wordpress_containers $$mariadb_containers; do \
 			docker stop $$container; \
 		done \
@@ -42,9 +43,9 @@ stop:
 clean:	stop
 #	delete inception related container
 	@if [ -n "$$(docker ps -a -q -f name=$(name))" ]; then \
-		mariadb_containers="$$(docker ps -a -q -f name=$(name)-$(services_mariadb)-)"; \
-		wordpress_containers="$$(docker ps -a -q -f name=$(name)-$(services_wordpress)-)"; \
-		nginx_containers="$$(docker ps -a -q -f name=$(name)-$(services_nginx)-)"; \
+		mariadb_containers="$$(docker ps -a -q -f name=$(name)_$(services_mariadb))"; \
+		wordpress_containers="$$(docker ps -a -q -f name=$(name)_$(services_wordpress))"; \
+		nginx_containers="$$(docker ps -a -q -f name=$(name)_$(services_nginx))"; \
 		for container in $$mariadb_containers $$wordpress_containers $$nginx_containers; do \
 			docker rm $$container; \
 		done \
@@ -52,6 +53,7 @@ clean:	stop
 		echo "make clean: no containers were found, skipping..."; \
 	fi
 
+fclean:	clean
 #	delete inception related images
 	@if [ -n "$$(docker images -aqf reference=$(name)-$(services_nginx))" ]; then \
 		docker rmi $$(docker images -aqf reference=$(name)-$(services_nginx)); \
@@ -81,19 +83,22 @@ clean:	stop
 	fi
 
 #	remove docker networks
-	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_nginx))" ]; then \
-		docker network rm $(name)_$(services_nginx); \
+	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_nginx)_to_host)" ]; then \
+		docker network rm $(name)_$(services_nginx)_to_host; \
 	else \
-		echo "no mariadb network set up, skipping..."; \
+		echo "no nginx <-> host network set up, skipping..."; \
 	fi
-	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_wordpress))" ]; then \
-		docker network rm $(name)_$(services_wordpress); \
+	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_wordpress)_to_$(services_nginx))" ]; then \
+		docker network rm $(name)_$(services_wordpress)_to_$(services_nginx); \
 	else \
-		echo "no wordpress network set up, skipping..."; \
+		echo "no wordpress <-> nginx network set up, skipping..."; \
+	fi
+	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_mariadb)_to_$(services_wordpress))" ]; then \
+		docker network rm $(name)_$(services_mariadb)_to_$(services_wordpress); \
+	else \
+		echo "no mariadb <-> wordpress network set up, skipping..."; \
 	fi
 
-
-fclean:	clean
 	sudo rm -rf ${HOME}/data
 
 re:	fclean all

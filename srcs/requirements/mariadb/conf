@@ -1,4 +1,10 @@
-alter user 'root'@'localhost' identified by 'sal1';
-create user 'akino'@'%' identified by 'sal2';
-grant all privileges on *.* to 'akino'@'%' with grant option;
+CREATE DATABASE IF NOT EXISTS wordpress;
+ALTER USER 'root'@'localhost' identified by '$MYSQL_ROOT_PASSWORD';
+CREATE USER IF NOT EXISTS '$MYSQL_USER'@'inception_wordpress' identified by '$MYSQL_PASSWORD';
+grant all privileges on wordpress.* to '$MYSQL_USER'@'inception_wordpress' with grant option;
 flush privileges;
+EXIT;
+
+sed -i "s/\$MYSQL_ROOT_PASSWORD/${MYSQL_ROOT_PASSWORD}/g" /root/conf.sql
+sed -i "s/\$MYSQL_USER/${MYSQL_USER}/g" /root/conf.sql
+sed -i "s/\$MYSQL_PASSWORD/${MYSQL_PASSWORD}/g" /root/conf.sql

@@ -1,23 +1,57 @@
 FROM	alpine:latest
-COPY	./conf /
+
+COPY ./tools/setup_mariadb.sh /root/
+RUN chmod +x /root/setup_mariadb.sh
+
+ARG	MYSQL_USER_ARG
+ARG MYSQL_PASSWORD_ARG
+ARG	MYSQL_DATADIR_ARG
+ARG MYSQL_ROOT_PASSWORD_ARG
+
+ENV	MYSQL_USER=$MYSQL_USER_ARG
+ENV	MYSQL_DATADIR=$MYSQL_DATADIR_ARG
+ENV	MYSQL_PASSWORD=$MYSQL_PASSWORD_ARG
+ENV	MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD_ARG
+
+#	test if necessary arguments are set
+RUN	test -n "$MYSQL_USER" || (echo "MYSQL_USER is not set" && false)
+RUN	test -n "$MYSQL_DATADIR" || (echo "MYSQL_DATADIR is not set" && false)
+RUN	test -n "$MYSQL_PASSWORD" || (echo "MYSQL_PASSWORD is not set" && false)
+RUN	test -n "$MYSQL_ROOT_PASSWORD" || (echo "MYSQL_ROOT_PASSWORD is not set" && false)
 
 #	install mariadb
-RUN	apk update && apk upgrade && apk add mariadb && apk add mariadb-client
+RUN	apk update && apk upgrade && apk add --no-cache mariadb && apk add --no-cache mariadb-client
 
-#   open connections to all interfaces and allow connections outside localhost
-RUN	sed -i '/bind-address=.*/c\bind-address=0.0.0.0' /etc/my.cnf.d/mariadb-server.cnf; \
-		sed -i '/skip-networking/d' /etc/my.cnf.d/mariadb-server.cnf;
-RUN	mkdir -p /run/mysqld /var/lib/mysql
+#	create necessary directories
+RUN	mkdir -p ${MYSQL_DATADIR}
+RUN	mkdir -p /run/mysqld
+RUN	mkdir -p /var/log/mysql
+
+#	set up mariadb
+RUN	sed -i '/bind-address=.*/c\bind-address=0.0.0.0' /etc/my.cnf.d/mariadb-server.cnf
+RUN	sed -i '/skip-networking/d' /etc/my.cnf.d/mariadb-server.cnf
 
 #	create non root user
-RUN adduser -DH mariadb
+RUN	adduser -DH ${MYSQL_USER}
+RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} ${MYSQL_DATADIR}
+RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} /run/mysqld/
+RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} /var/log/mysql/
+RUN	chown ${MYSQL_USER}:${MYSQL_USER} /etc/my.cnf.d/mariadb-server.cnf
+RUN	chown ${MYSQL_USER}:${MYSQL_USER} /etc/my.cnf
+RUN	chmod 644 /etc/my.cnf.d/mariadb-server.cnf
+RUN	chmod 644 /etc/my.cnf
+RUN	chmod -R 750 ${MYSQL_DATADIR}
+RUN	chmod -R 750 /var/log/mysql/
 
-#	create necessary directories and set ownership
-RUN	chown -R mariadb:mariadb /run/mysqld /var/lib/mysql
+#	setup mariadb
+RUN	mariadb-install-db --user="root" --datadir="${MYSQL_DATADIR}"
+RUN	/root/setup_mariadb.sh
 
-USER mariadb
-RUN	mysql_install_db --user=mariadb --datadir=/var/lib/mysql
+#	override sensitive data
+ENV	MYSQL_PASSWORD='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+ENV	MYSQL_ROOT_PASSWORD='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
-
-EXPOSE  3306
-CMD     ["mysqld", "--user=mariadb", "--datadir=/var/lib/mysql"]
+EXPOSE	3306
+USER $MYSQL_USER
+CMD sleep infinity
+#CMD mariadbd --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"
