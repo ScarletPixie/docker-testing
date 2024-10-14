@@ -14,18 +14,27 @@ services:
       - mariadb_vol:${MYSQL_DATADIR}
     networks:
       - mariadb_to_wordpress
+    ports:
+      - 3306
 
   wordpress:
     container_name: inception_wordpress
     restart: always
-    build: ./requirements/wordpress/
+    build:
+      context: ./requirements/wordpress/
+      dockerfile: Dockerfile
+      args:
+      - MYSQL_USER_ARG=${MYSQL_USER}
+      - MYSQL_PASSWORD_ARG=${MYSQL_PASSWORD}
     networks:
       - mariadb_to_wordpress
       - wordpress_to_nginx
     depends_on:
       - mariadb
     volumes:
-      - wordpress_vol:/var/www/html
+      - wordpress_vol:/var/www/html/wordpress
+    ports:
+      - 9000
 
   nginx:
     container_name: inception_nginx
@@ -39,7 +48,7 @@ services:
     depends_on:
       - wordpress
     volumes:
-      - wordpress_vol:/var/www/html
+      - wordpress_vol:/var/www/html/wordpress
 
 networks:
 # mariadb <-> wordpress

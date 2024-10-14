@@ -1,7 +1,10 @@
-FROM	alpine:latest
+FROM	alpine:3.19.4
 
 COPY ./tools/setup_mariadb.sh /root/
+COPY ./tools/test_environment.sh /root/
+COPY ./tools/create_wordpress_db.sql /root/
 RUN chmod +x /root/setup_mariadb.sh
+RUN chmod +x /root/test_environment.sh
 
 ARG	MYSQL_USER_ARG
 ARG MYSQL_PASSWORD_ARG
@@ -14,10 +17,7 @@ ENV	MYSQL_PASSWORD=$MYSQL_PASSWORD_ARG
 ENV	MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD_ARG
 
 #	test if necessary arguments are set
-RUN	test -n "$MYSQL_USER" || (echo "MYSQL_USER is not set" && false)
-RUN	test -n "$MYSQL_DATADIR" || (echo "MYSQL_DATADIR is not set" && false)
-RUN	test -n "$MYSQL_PASSWORD" || (echo "MYSQL_PASSWORD is not set" && false)
-RUN	test -n "$MYSQL_ROOT_PASSWORD" || (echo "MYSQL_ROOT_PASSWORD is not set" && false)
+RUN	/root/test_environment.sh
 
 #	install mariadb
 RUN	apk update && apk upgrade && apk add --no-cache mariadb && apk add --no-cache mariadb-client
@@ -50,6 +50,6 @@ ENV	MYSQL_PASSWORD='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 ENV	MYSQL_ROOT_PASSWORD='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
 EXPOSE	3306
-USER $MYSQL_USER
+USER	$MYSQL_USER
 #CMD sleep infinity
-CMD mariadbd --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"
+CMD	mariadbd --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"

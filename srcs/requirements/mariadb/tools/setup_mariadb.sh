@@ -16,13 +16,17 @@ done
 
 mariadb <<EOF
 CREATE DATABASE IF NOT EXISTS wordpress;
-ALTER USER 'root'@'localhost' identified by '$MYSQL_ROOT_PASSWORD';
-CREATE USER IF NOT EXISTS '$MYSQL_USER'@'inception_wordpress' identified by '$MYSQL_PASSWORD';
-grant all privileges on wordpress.* to '$MYSQL_USER'@'inception_wordpress' with grant option;
-flush privileges;
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';
+CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
+GRANT ALL PRIVILEGES ON wordpress.* to '$MYSQL_USER'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
 EXIT;
 EOF
+
+#mariadb -u root -p"$MYSQL_ROOT_PASSWORD" wordpress < /root/create_wordpress_db.sql
+
 mariadb-admin -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown
 wait
 
-trap "rm -rf /root/setup_mariadb.sh" EXIT
+rm -rf /root/create_wordpress_db.sql
+trap "rm -rf /root/$0" EXIT
