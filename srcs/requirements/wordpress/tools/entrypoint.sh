@@ -21,5 +21,5 @@ if [ ! -f "/var/www/html/wordpress/wp-config.php" ]; then
 	#cp wp-config-sample.php wp-config.php
 fi
 
-MYSQL_PASSWORD="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+unset MYSQL_PASSWORD
 exec "php-fpm82" "--nodaemonize"

@@ -2,7 +2,6 @@ FROM	alpine:3.19.4
 
 COPY ./tools/setup_mariadb.sh /root/
 COPY ./tools/test_environment.sh /root/
-COPY ./tools/create_wordpress_db.sql /root/
 RUN chmod +x /root/setup_mariadb.sh
 RUN chmod +x /root/test_environment.sh
 
@@ -27,15 +26,10 @@ RUN	apk update && apk upgrade && apk add --no-cache mariadb && apk add --no-cach
 RUN	mkdir -p /run/mysqld
 RUN	mkdir -p /var/log/mysql
 
-#	set up mariadb
-RUN	sed -i '/bind-address=.*/c\bind-address=0.0.0.0' /etc/my.cnf.d/mariadb-server.cnf
-RUN	sed -i '/skip-networking/d' /etc/my.cnf.d/mariadb-server.cnf
-
 #	create non root user
 RUN	adduser -DH ${MYSQL_USER}
 
 #	setup mariadb
-RUN	mariadb-install-db --user="$MYSQL_USER" --datadir="${MYSQL_DATADIR}"
 RUN	/root/setup_mariadb.sh
 
 #	set permissions
@@ -51,5 +45,5 @@ ENV	MYSQL_ROOT_PASSWORD='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
 EXPOSE	3306
 USER	$MYSQL_USER
-#CMD sleep infinity
-CMD	mariadbd --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"
+
+CMD	mariadbd-safe --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"

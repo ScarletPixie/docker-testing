@@ -1,9 +1,17 @@
 #!/bin/sh
 
-MYSQL_USER_ENV=$MYSQL_USER
-MYSQL_DATADIR_ENV=$MYSQL_DATADIR
-MYSQL_PASSWORD_ENV=$MYSQL_PASSWORD
-MYSQL_ROOT_PASSWORD_ENV=$MYSQL_ROOT_PASSWORD
+wordpress_ip_address=$(getent hosts inception_wordpress | awk '{ print $1 }')
+
+if [ -z $wordpress_ip_address ]; then
+	sed -i "/bind-address=.\*/c\bind-address=${wordpress_ip_address}" /etc/my.cnf.d/mariadb-server.cnf
+else
+	echo "couldn't resolve wordpress container ip, using default 0.0.0.0"
+	sed -i '/bind-address=.\*/c\bind-address=0.0.0.0' /etc/my.cnf.d/mariadb-server.cnf
+fi
+sed -i '/skip-networking/d' /etc/my.cnf.d/mariadb-server.cnf
+
+
+mariadb-install-db --user="$MYSQL_USER" --datadir="${MYSQL_DATADIR}"
 
 mariadbd --user=root --datadir="${MYSQL_DATADIR}" &
 status=1
