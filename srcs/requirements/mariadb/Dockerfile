@@ -23,7 +23,7 @@ RUN	test -n "$MYSQL_ROOT_PASSWORD" || (echo "MYSQL_ROOT_PASSWORD is not set" && 
 RUN	apk update && apk upgrade && apk add --no-cache mariadb && apk add --no-cache mariadb-client
 
 #	create necessary directories
-RUN	mkdir -p ${MYSQL_DATADIR}
+#RUN	mkdir -p ${MYSQL_DATADIR}
 RUN	mkdir -p /run/mysqld
 RUN	mkdir -p /var/log/mysql
 
@@ -33,19 +33,17 @@ RUN	sed -i '/skip-networking/d' /etc/my.cnf.d/mariadb-server.cnf
 
 #	create non root user
 RUN	adduser -DH ${MYSQL_USER}
+
+#	setup mariadb
+RUN	mariadb-install-db --user="$MYSQL_USER" --datadir="${MYSQL_DATADIR}"
+RUN	/root/setup_mariadb.sh
+
+#	set permissions
 RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} ${MYSQL_DATADIR}
 RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} /run/mysqld/
 RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} /var/log/mysql/
 RUN	chown ${MYSQL_USER}:${MYSQL_USER} /etc/my.cnf.d/mariadb-server.cnf
 RUN	chown ${MYSQL_USER}:${MYSQL_USER} /etc/my.cnf
-RUN	chmod 644 /etc/my.cnf.d/mariadb-server.cnf
-RUN	chmod 644 /etc/my.cnf
-RUN	chmod -R 750 ${MYSQL_DATADIR}
-RUN	chmod -R 750 /var/log/mysql/
-
-#	setup mariadb
-RUN	mariadb-install-db --user="root" --datadir="${MYSQL_DATADIR}"
-RUN	/root/setup_mariadb.sh
 
 #	override sensitive data
 ENV	MYSQL_PASSWORD='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -53,5 +51,5 @@ ENV	MYSQL_ROOT_PASSWORD='https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
 EXPOSE	3306
 USER $MYSQL_USER
-CMD sleep infinity
-#CMD mariadbd --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"
+#CMD sleep infinity
+CMD mariadbd --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"

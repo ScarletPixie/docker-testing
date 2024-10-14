@@ -1,6 +1,5 @@
 services:
   mariadb:
-    user: "1001:1001"
     container_name: inception_mariadb
     restart: always
     build:
@@ -12,7 +11,7 @@ services:
       - MYSQL_ROOT_PASSWORD_ARG=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATADIR_ARG=${MYSQL_DATADIR}
     volumes:
-      - mariadb_vol:/var/lib/mysql
+      - mariadb_vol:${MYSQL_DATADIR}
     networks:
       - mariadb_to_wordpress
 

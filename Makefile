@@ -21,10 +21,8 @@ create:	${mariadb_vol} ${wordpress_vol}
 #	create volume directories
 ${mariadb_vol}:
 	mkdir -p ${mariadb_vol}
-	chmod -R 770 ${mariadb_vol}
 ${wordpress_vol}:
 	mkdir -p ${wordpress_vol}
-	chmod -R 770 ${wordpress_vol}
 
 #	cleanup	
 stop:
