@@ -1,11 +1,15 @@
 #!/bin/sh
 
+if [ -z "$DOMAIN_NAME" ]; then
+    echo "DOMAIN_NAME is not set" && exit 1
+fi
+
 mkdir -p /etc/nginx/ssl/
 cd /etc/nginx/ssl
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout localhost.key -out localhost.crt -subj "/C=BR/ST=Rio de Janeiro/L=Rio de Janeiro/O=Organization/OU=Department/CN=localhost"
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout "wordpress.key" -out "wordpress.crt" -subj "/C=BR/ST=Rio de Janeiro/L=Rio de Janeiro/O=Organization/OU=Department/CN=wordpress"
 mkdir /etc/nginx/ssl
-chown -R root:root /etc/nginx/ssl
-chmod -R 600 /etc/nginx/ssl
+chown -R www-data:www-data /etc/nginx/ssl
+chmod -R 700 /etc/nginx/ssl
 
 cat << 'EOF' > '/etc/nginx/http.d/wordpress.conf'
 server {
@@ -15,8 +19,8 @@ server {
         root            /var/www/html/wordpress;
 
 
-        ssl_certificate /etc/nginx/ssl/localhost.crt;
-        ssl_certificate_key /etc/nginx/ssl/localhost.key;
+        ssl_certificate /etc/nginx/ssl/wordpress.crt;
+        ssl_certificate_key /etc/nginx/ssl/wordpress.key;
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_prefer_server_ciphers on;
 
@@ -34,3 +38,5 @@ server {
         }
 }
 EOF
+
+sed -i "/server_name.*/c\server_name    $DOMAIN_NAME;" '/etc/nginx/http.d/wordpress.conf'

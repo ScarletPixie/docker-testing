@@ -16,6 +16,9 @@ services:
       - mariadb_to_wordpress
     ports:
       - 3306
+    environment:
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATADIR=${MYSQL_DATADIR}
 
   wordpress:
     container_name: inception_wordpress
@@ -35,11 +38,20 @@ services:
       - wordpress_vol:/var/www/html/wordpress
     ports:
       - 9000
+    extra_hosts:
+      - ${DOMAIN_NAME}:127.0.0.1
 
   nginx:
     container_name: inception_nginx
     restart: always
-    build: ./requirements/nginx/
+    build:
+      context:  ./requirements/nginx/
+      dockerfile: Dockerfile
+      args:
+        - DOMAIN_NAME=${DOMAIN_NAME}
+        - WP_ADMIN=${WP_ADMIN}
+        - WP_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
+        - WP_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
     ports:
       - 443:443
     networks:
@@ -49,6 +61,8 @@ services:
       - wordpress
     volumes:
       - wordpress_vol:/var/www/html/wordpress
+    extra_hosts:
+      - ${DOMAIN_NAME}:127.0.0.1
 
 networks:
 # mariadb <-> wordpress
