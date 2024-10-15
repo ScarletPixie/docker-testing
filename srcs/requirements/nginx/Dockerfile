@@ -31,7 +31,6 @@ RUN chmod 700 /run/nginx/
 #	remove tlsv1 from default setting in nginx
 RUN sed -i '/ssl_protocols.*/c\ssl_protocols TLSv1.2 TLSv1.3;' /etc/nginx/nginx.conf
 
-
 #	change nginx user
 RUN sed -i '/user nginx/d' /etc/nginx/nginx.conf
 
