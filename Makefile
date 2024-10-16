@@ -10,7 +10,7 @@ wordpress_vol	:= $(HOME)/data/wordpress
 services_nginx		:= nginx
 services_mariadb	:= mariadb
 services_wordpress	:= wordpress
-
+services_redis		:= redis
 
 #	run docker compose
 all:	create
@@ -31,7 +31,8 @@ stop:
 		nginx_containers="$$(docker ps -q -f name=$(name)_$(services_nginx))"; \
 		wordpress_containers="$$(docker ps -q -f name=$(name)_$(services_wordpress))"; \
 		mariadb_containers="$$(docker ps -q -f name=$(name)_$(services_mariadb))"; \
-		for container in $$nginx_containers $$wordpress_containers $$mariadb_containers; do \
+		redis_containers="$$(docker ps -qf name=$(name)_$(services_redis))"; \
+		for container in $$nginx_containers $$wordpress_containers $$mariadb_containers $$redis_containers; do \
 			docker stop $$container; \
 		done \
 	else \
@@ -44,7 +45,8 @@ clean:	stop
 		mariadb_containers="$$(docker ps -a -q -f name=$(name)_$(services_mariadb))"; \
 		wordpress_containers="$$(docker ps -a -q -f name=$(name)_$(services_wordpress))"; \
 		nginx_containers="$$(docker ps -a -q -f name=$(name)_$(services_nginx))"; \
-		for container in $$mariadb_containers $$wordpress_containers $$nginx_containers; do \
+		redis_containers="$$(docker ps -aqf name=$(name)_$(services_redis))"; \
+		for container in $$nginx_containers $$wordpress_containers $$mariadb_containers $$redis_containers; do \
 			docker rm $$container; \
 		done \
 	else \
@@ -67,6 +69,11 @@ fclean:	clean
 		docker rmi $$(docker images -aqf reference=$(name)-$(services_mariadb)); \
 	else \
 		echo "make clean: no images related to $(services_mariadb) were found, skipping..."; \
+	fi
+	@if [ -n "$$(docker images -aqf reference=$(name)-$(services_redis))" ]; then \
+		docker rmi $$(docker images -aqf reference=$(name)-$(services_redis)); \
+	else \
+		echo "make clean: no images related to $(services_redis) were found, skipping..."; \
 	fi
 
 #	'remove' docker volumes

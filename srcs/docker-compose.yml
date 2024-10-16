@@ -1,4 +1,16 @@
 services:
+  # bonus
+  redis:
+    container_name: inception_redis
+    restart: always
+    build:
+      context: ./requirements/bonus/redis
+      dockerfile: Dockerfile
+
+  #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#
+
+
+  # mandatory
   mariadb:
     container_name: inception_mariadb
     restart: always
@@ -68,7 +80,7 @@ services:
       - wordpress_vol:/var/www/html/wordpress
     extra_hosts:
       - ${DOMAIN_NAME}:127.0.0.1
-
+    #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#
 networks:
 # mariadb <-> wordpress
   mariadb_to_wordpress:
