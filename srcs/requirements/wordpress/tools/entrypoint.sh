@@ -1,30 +1,27 @@
 #!/bin/sh
 
 set -e
-
-#https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh
+cd /var/www/html/wordpress
 
 #	get wordpress and wordpress cli
 if [ ! -f "/var/www/html/wordpress/wp-config.php" ]; then
-	cd /var/www/html
-	#rm -rf wordpress
-	apk add wget php php-phar php-mysqli php-mbstring #	for some reason the pre installed wget is not working
-	wget https://wordpress.org/latest.zip
-	wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-	wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh
-	chmod +x ./wait-for-it.sh
-	unzip latest.zip
-	rm -rf latest.zip
-	mv wp-cli.phar wordpress
+	#	get passwords
+	MYSQL_PASSWORD=$(cat /tmp/mysql_password)
+	WP_ADMIN_PASSWORD=$(cat /tmp/wp_admin_password)
+	WP_PASSWORD=$(cat /tmp/wp_password)
 
+	if [ -z "$MYSQL_PASSWORD" ] || [ -z "$WP_ADMIN_PASSWORD" ] || [ -z "$WP_PASSWORD" ]; then
+		echo "missing necessary mysql_password and wp_admin_password files, rebuild please" && exit 1
+	fi
 
-	chown -R www-data:www-data /var/www/html
-
-	cd wordpress
+	#	create wp-config.php and install wordpress
 	php wp-cli.phar config create --dbname=wordpress --dbuser="$MYSQL_USER" --dbpass="$MYSQL_PASSWORD" --dbhost="inception_mariadb"
-	#php wp-cli.phar core install --url=localhost --title="WP-CLI" --admin_user=wpcli --admin_password=wpcli --admin_email=info@wp-cli.org
-	#php wp-cli.phar core install --url=localhost --title="WP-CLI" --admin_user=wpcli --admin_password=wpcli --admin_email=info@wp-cli.org
-	#cp wp-config-sample.php wp-config.php
+	php wp-cli.phar core install --url="$DOMAIN_NAME" --title="$WP_TITLE" --admin_user="$WP_ADMIN" --admin_password="$WP_ADMIN_PASSWORD" --admin_email="$WP_ADMIN_EMAIL" --skip-email
+	php wp-cli.phar user create "$WP_USER" "$WP_EMAIL" --role=author --user_pass="$WP_PASSWORD"
+	rm wp-cli.phar
 fi
+
+#	delete password files
+rm -rf /tmp/*
 
 exec "php-fpm82" "--nodaemonize"

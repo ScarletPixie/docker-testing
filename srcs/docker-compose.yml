@@ -29,6 +29,14 @@ services:
       args:
       - MYSQL_USER_ARG=${MYSQL_USER}
       - MYSQL_PASSWORD_ARG=${MYSQL_PASSWORD}
+      - WP_ADMIN_ARG=${WP_ADMIN}
+      - WP_ADMIN_EMAIL_ARG=${WP_ADMIN_EMAIL}
+      - WP_ADMIN_PASSWORD_ARG=${WP_ADMIN_PASSWORD}
+      - WP_TITLE_ARG=${WP_TITLE}
+      - DOMAIN_NAME_ARG=${DOMAIN_NAME}
+      - WP_USER_ARG=${WP_USER}
+      - WP_EMAIL_ARG=${WP_EMAIL}
+      - WP_PASSWORD_ARG=${WP_PASSWORD}
     networks:
       - mariadb_to_wordpress
       - wordpress_to_nginx
@@ -49,9 +57,6 @@ services:
       dockerfile: Dockerfile
       args:
         - DOMAIN_NAME=${DOMAIN_NAME}
-        - WP_ADMIN=${WP_ADMIN}
-        - WP_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
-        - WP_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
     ports:
       - 443:443
     networks:

@@ -28,8 +28,9 @@ RUN chmod 700 /etc/nginx/ssl/wordpress.crt; chmod 700 /etc/nginx/ssl/wordpress.k
 RUN chmod 700 /var/lib/nginx/logs/error.log; chmod 700 /var/lib/nginx/logs/access.log
 RUN chmod 700 /run/nginx/
 
-#	remove tlsv1 from default setting in nginx
+#	remove tlsv1 from default setting in nginx and remove default nginx page
 RUN sed -i '/ssl_protocols.*/c\ssl_protocols TLSv1.2 TLSv1.3;' /etc/nginx/nginx.conf
+RUN rm -f /etc/nginx/http.d/default.conf
 
 #	change nginx user
 RUN sed -i '/user nginx/d' /etc/nginx/nginx.conf
