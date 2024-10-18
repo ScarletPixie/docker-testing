@@ -3,14 +3,17 @@ This folder is destined to store sensitive information such as database password
 
 ##	Mandatory files
 The files below are ignored by git and are supposed to be either placed manually or passed as arguments to:
+
 ```bash
 make config \
-    db_user_password="<value>" \
-    db_root_password="<value>" \
-    wp_admin_password="<value>" \
-    wp_user_password="<value>" \
-    redis_password="<value>" \
-    certificate-subj="/C=<country>/ST=<state>/L=<city>/O=<organization name>/OU=<organization unit (optional)>/CN=<domain name>"
+	db_user_password="<value>" \
+	db_root_password="<value>" \
+	wp_admin_password="<value>" \
+	wp_admin_email="<value>" \
+	wp_user_password="<value>" \
+	wp_user_email="<value>" \
+	redis_password="<value>" \
+	certificate_subj="/C=<country>/ST=<state>/L=<city>/O=<organization name>/OU=<organization unit (optional)>/CN=<domain name>"
 ```
 
 ###	mariadb credentials
@@ -19,7 +22,9 @@ make config \
 
 ###	wordpress credentials
 -	wp_admin_password.txt
+-	wp_admin_email.txt
 -	wp_user_password.txt
+-	wp_user_email.txt
 
 ###	redis credentials
 -	redis_password.txt

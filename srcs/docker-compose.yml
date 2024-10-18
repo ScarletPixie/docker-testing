@@ -5,11 +5,6 @@ services:
     build:
       context: ./requirements/mariadb/
       dockerfile: Dockerfile
-      args:
-      - MYSQL_USER_ARG=${MYSQL_USER}
-      - MYSQL_PASSWORD_ARG=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD_ARG=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATADIR_ARG=${MYSQL_DATADIR}
     volumes:
       - mariadb_vol:${MYSQL_DATADIR}
     networks:
@@ -17,8 +12,11 @@ services:
     ports:
       - 3306
     environment:
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_DATADIR=${MYSQL_DATADIR}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_DATADIR=${MARIADB_DATADIR}
+    secrets:
+      - db_user_password
+      - db_root_password
 
   wordpress:
     container_name: inception_wordpress
@@ -26,17 +24,6 @@ services:
     build:
       context: ./requirements/wordpress/
       dockerfile: Dockerfile
-      args:
-      - MYSQL_USER_ARG=${MYSQL_USER}
-      - MYSQL_PASSWORD_ARG=${MYSQL_PASSWORD}
-      - WP_ADMIN_ARG=${WP_ADMIN}
-      - WP_ADMIN_EMAIL_ARG=${WP_ADMIN_EMAIL}
-      - WP_ADMIN_PASSWORD_ARG=${WP_ADMIN_PASSWORD}
-      - WP_TITLE_ARG=${WP_TITLE}
-      - DOMAIN_NAME_ARG=${DOMAIN_NAME}
-      - WP_USER_ARG=${WP_USER}
-      - WP_EMAIL_ARG=${WP_EMAIL}
-      - WP_PASSWORD_ARG=${WP_PASSWORD}
     networks:
       - mariadb_to_wordpress
       - wordpress_to_nginx
@@ -48,15 +35,25 @@ services:
       - 9000
     extra_hosts:
       - ${DOMAIN_NAME}:127.0.0.1
+    secrtets:
+      - wp_user_email
+      - wp_user_password
+      - wp_admin_email
+      - wp_admin_password
+      - db_user_password
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+      - WP_TITLE=${WP_TITLE}
+      - WP_USERS="${WP_ADMIN} ${WP_USER}"
+      - DB_USER=${MARIADB_USER}
+      - DB_HOST=inception_mariadb
 
   nginx:
     container_name: inception_nginx
     restart: always
     build:
-      context:  ./requirements/nginx/
+      context: ./requirements/nginx/
       dockerfile: Dockerfile
-      args:
-        - DOMAIN_NAME=${DOMAIN_NAME}
     ports:
       - 443:443
     networks:
@@ -68,6 +65,8 @@ services:
       - wordpress_vol:/var/www/html/wordpress
     extra_hosts:
       - ${DOMAIN_NAME}:127.0.0.1
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
 
 networks:
 # mariadb <-> wordpress
@@ -99,3 +98,20 @@ volumes:
       type: bind
       o: bind
       device: ${WORDPRESS_VOL}
+
+# passwords and sensitive information
+secrets:
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  db_user_password:
+    file: ../secrets/db_user_password.txt
+  redis_password:
+    file: ../secrets/redis_password.txt
+  wp_admin_password:
+    file: ../secrets/wp_admin_password.txt
+  wp_user_password:
+    file: ../secrets/wp_user_password.txt
+  wp_admin_email:
+    file: ../secrets/wp_admin_email.txt
+  wp_user_email:
+    file: ../secrets/wp_user_email.txt
