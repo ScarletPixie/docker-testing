@@ -80,8 +80,8 @@ create-secret:	#expected arguments: filepath=<path> content=<content>
 
 ########################## BUILD AND START CONTAINERS ###################################
 create:	$(MARIADB_VOL) $(WORDPRESS_VOL) check-env check-config							#
-	docker swarm init || echo "already in swarm mode, skipping..."						#
-	cd srcs && docker compose -p $(name) up -d											#
+	@docker swarm init || echo "already in swarm mode, skipping..."						#
+	@cd srcs && docker compose -p $(name) up -d											#
 #########################################################################################
 
 

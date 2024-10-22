@@ -5,8 +5,14 @@ services:
     build:
       context: ./requirements/mariadb/
       dockerfile: Dockerfile
+      args:
+        - MARIADB_USER_ARG=${MARIADB_USER}
+        - MARIADB_DATADIR_ARG=${MARIADB_DATADIR}
+      secrets:
+        - db_user_password
+        - db_root_password
     volumes:
-      - mariadb_vol:${MYSQL_DATADIR}
+      - mariadb_vol:${MARIADB_DATADIR}
     networks:
       - mariadb_to_wordpress
     ports:
@@ -14,9 +20,6 @@ services:
     environment:
       - MARIADB_USER=${MARIADB_USER}
       - MARIADB_DATADIR=${MARIADB_DATADIR}
-    secrets:
-      - db_user_password
-      - db_root_password
 
   wordpress:
     container_name: inception_wordpress
@@ -35,7 +38,7 @@ services:
       - 9000
     extra_hosts:
       - ${DOMAIN_NAME}:127.0.0.1
-    secrtets:
+    secrets:
       - wp_user_email
       - wp_user_password
       - wp_admin_email
