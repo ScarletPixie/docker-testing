@@ -8,8 +8,10 @@ The files below are ignored by git and are supposed to be either placed manually
 make config \
 	db_user_password="<value>" \
 	db_root_password="<value>" \
+	wp_admin_name="<value>" \
 	wp_admin_password="<value>" \
 	wp_admin_email="<value>" \
+	wp_user_name="<value" \
 	wp_user_password="<value>" \
 	wp_user_email="<value>" \
 	redis_password="<value>" \
@@ -21,8 +23,10 @@ make config \
 -	db_root_password.txt
 
 ###	wordpress credentials
+-	wp_admin_name.txt
 -	wp_admin_password.txt
 -	wp_admin_email.txt
+-	wp_user_name.txt
 -	wp_user_password.txt
 -	wp_user_email.txt
 
@@ -30,5 +34,5 @@ make config \
 -	redis_password.txt
 
 ###	ssl certificates
--	&lt;domain name&gt;.crt
--	&lt;domain name&gt;.key
+-	wordpress.crt
+-	wordpress.key
