@@ -39,8 +39,8 @@ check-config:																									#
 	@test -n "$$(cat secrets/wp_user_email.txt)"		||	(echo "no wp_user_email set" && exit 1)				#
 	@test -n "$$(cat secrets/wp_user_password.txt)"		||	(echo "no wp_user_password set" && exit 1)			#
 	@test -n "$$(cat secrets/wp_admin_password.txt)"	||	(echo "no wp_admin_password set" && exit 1)			#
-	@test -n "$$(find secrets -name $(DOMAIN_NAME).crt)" || (echo "missing certificate file .crt" && exit 1)	#
-	@test -n "$$(find secrets -name $(DOMAIN_NAME).key)" || (echo "missing certificate file .crt" && exit 1)	#
+	@test -n "$$(find secrets -name wordpress.crt)" || (echo "missing certificate file .crt" && exit 1)	#
+	@test -n "$$(find secrets -name wordpress.key)" || (echo "missing certificate file .crt" && exit 1)	#
 #################################################################################################################
 
 
@@ -55,13 +55,13 @@ config:
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_user_email.txt" content="$(wp_user_email)"
 
 #	ssl certificate
-	@if [ ! -f "secrets/$(DOMAIN_NAME).crt" ] || [ ! -f "secrets/$(DOMAIN_NAME).key" ]; then \
+	@if [ ! -f "secrets/wordpress.crt" ] || [ ! -f "secrets/wordpress.key" ]; then \
 		echo "creating ssl certificates..."; \
 		if [ -z "$(certificate_subj)" ]; then \
 			echo "missing certificate subject parameter!" && exit 1; \
 		fi; \
 		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-			-keyout "secrets/$(DOMAIN_NAME).key" -out "secrets/$(DOMAIN_NAME).crt" \
+			-keyout "secrets/wordpress.key" -out "secrets/wordpress.crt" \
 			-subj "$(certificate_subj)"; \
 	else\
 		echo "ssl certificate already exists, skipping..."; \
