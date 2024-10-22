@@ -32,15 +32,21 @@ check-env:																				#
 
 ############################## CHECK IF ALL NECESSARY SECRET FILES EXIST ########################################
 check-config:																									#
+## MARIADB ######################################################################################################
 	@test -n "$$(cat secrets/db_root_password.txt)"		||	(echo "no db_root_password set" && exit 1)			#
 	@test -n "$$(cat secrets/db_user_password.txt)"		||	(echo "no db_user_password set" && exit 1)			#
+## REDIS ########################################################################################################
 	@test -n "$$(cat secrets/redis_password.txt)"		||	(echo "no redis_password set" && exit 1)			#
+## WORDPRESS ####################################################################################################
+	@test -n "$$(cat secrets/wp_admin_name.txt)"		||	(echo "no wp_admin_user set" && exit 1)				#
 	@test -n "$$(cat secrets/wp_admin_email.txt)"		||	(echo "no wp_admin_emailset" && exit 1)				#
+	@test -n "$$(cat secrets/wp_admin_password.txt)"	||	(echo "no wp_admin_password set" && exit 1)			#
+	@test -n "$$(cat secrets/wp_user_name.txt)"			||	(echo "no wp_user_name set" && exit 1)				#
 	@test -n "$$(cat secrets/wp_user_email.txt)"		||	(echo "no wp_user_email set" && exit 1)				#
 	@test -n "$$(cat secrets/wp_user_password.txt)"		||	(echo "no wp_user_password set" && exit 1)			#
-	@test -n "$$(cat secrets/wp_admin_password.txt)"	||	(echo "no wp_admin_password set" && exit 1)			#
-	@test -n "$$(find secrets -name wordpress.crt)" || (echo "missing certificate file .crt" && exit 1)	#
-	@test -n "$$(find secrets -name wordpress.key)" || (echo "missing certificate file .crt" && exit 1)	#
+## SSL CERTIFICATES #############################################################################################
+	@test -n "$$(find secrets -name wordpress.crt)"		||	(echo "missing certificate file .crt" && exit 1)	#
+	@test -n "$$(find secrets -name wordpress.key)"		||	(echo "missing certificate file .crt" && exit 1)	#
 #################################################################################################################
 
 
@@ -48,10 +54,15 @@ check-config:																									#
 config:
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_root_password.txt" content="$(db_root_password)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_user_password.txt" content="$(db_user_password)"
+	
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/redis_password.txt" content="$(redis_password)"
+
+	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_name.txt" content="$(wp_admin_name)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_password.txt" content="$(wp_admin_password)"
-	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_user_password.txt" content="$(wp_user_password)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_email.txt" content="$(wp_admin_email)"
+
+	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_user_name.txt" content="$(wp_user_name)"
+	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_user_password.txt" content="$(wp_user_password)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_user_email.txt" content="$(wp_user_email)"
 
 #	ssl certificate
