@@ -27,39 +27,35 @@ check-env:																				#
 #########################################################################################
 
 define print_error
-	make --no-print-directory config-error
+	make --no-print-directory config-error config=$(1) 2> /dev/null
 endef
 
-############################## CHECK IF ALL NECESSARY SECRET FILES EXIST ########################################
-check-config:																									#
-## MARIADB ######################################################################################################
-	@test -n "$$(cat secrets/db_root_password.txt)"		||	($(call print_error, config=db_root_password.txt))	#
-	@test -n "$$(cat secrets/db_user_password.txt)"		||	(echo "no db_user_password set" && exit 1)			#
-## REDIS ########################################################################################################
-	@test -n "$$(cat secrets/redis_password.txt)"		||	(echo "no redis_password set" && exit 1)			#
-## WORDPRESS ####################################################################################################
-	@test -n "$$(cat secrets/wp_admin_name.txt)"		||	(echo "no wp_admin_user set" && exit 1)				#
-	@test -n "$$(cat secrets/wp_admin_email.txt)"		||	(echo "no wp_admin_emailset" && exit 1)				#
-	@test -n "$$(cat secrets/wp_admin_password.txt)"	||	(echo "no wp_admin_password set" && exit 1)			#
-	@test -n "$$(cat secrets/wp_user_name.txt)"			||	(echo "no wp_user_name set" && exit 1)				#
-	@test -n "$$(cat secrets/wp_user_email.txt)"		||	(echo "no wp_user_email set" && exit 1)				#
-	@test -n "$$(cat secrets/wp_user_password.txt)"		||	(echo "no wp_user_password set" && exit 1)			#
-## SSL CERTIFICATES #############################################################################################
-	@test -n "$$(find secrets -name wordpress.crt)"		||	(echo "missing wordpress.crt" && exit 1)			#
-	@test -n "$$(find secrets -name wordpress.key)"		||	(echo "missing wordpress.crt" && exit 1)			#
+######################################### CHECK IF ALL NECESSARY SECRET FILES EXIST #########################################
+check-config:																												#
+## MARIADB ##################################################################################################################
+	@test -n "$$(cat secrets/db_root_password.txt 2> /dev/null)"	||	$(call print_error, config=db_root_password.txt)	#
+	@test -n "$$(cat secrets/db_user_password.txt 2> /dev/null)"	||	$(call print_error, config=db_user_password.txt)	#
+## REDIS ####################################################################################################################
+	@test -n "$$(cat secrets/redis_password.txt 2> /dev/null)"		||	$(call print_error, config=redis_password.txt)		#
+## WORDPRESS ################################################################################################################
+	@test -n "$$(cat secrets/wp_admin_name.txt 2> /dev/null)"		||	$(call print_error, config=wp_admin_name.txt)		#
+	@test -n "$$(cat secrets/wp_admin_email.txt  2> /dev/null)"		||	$(call print_error, config=wp_admin_email.txt)		#
+	@test -n "$$(cat secrets/wp_admin_password.txt  2> /dev/null)"	||	$(call print_error, config=wp_admin_password.txt)	#
+	@test -n "$$(cat secrets/wp_user_name.txt  2> /dev/null)"		||	$(call print_error, config=wp_user_name.txt)		#
+	@test -n "$$(cat secrets/wp_user_email.txt  2> /dev/null)"		||	$(call print_error, config=wp_user_email.txt)		#
+	@test -n "$$(cat secrets/wp_user_password.txt  2> /dev/null)"	||	$(call print_error, config=wp_user_password.txt)	#
+## SSL CERTIFICATES #########################################################################################################
+	@test -n "$$(find secrets -name wordpress.crt)"					||	$(call print_error, config=wordpress.crt)			#
+	@test -n "$$(find secrets -name wordpress.key)"					||	$(call print_error, config=wordpress.key)			#
+#############################################################################################################################
 
-
-config-error:																									#
-	@echo "$(config) not present in secrets folder, add it manually of run 'make config $(config)=<value>"		#
-	@exit 1																										#
-#################################################################################################################
 
 
 ####################################### CREATE SECRET FILES FROM ARGS ######################################################
 config:
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_root_password.txt" content="$(db_root_password)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_user_password.txt" content="$(db_user_password)"
-	
+
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/redis_password.txt" content="$(redis_password)"
 
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_name.txt" content="$(wp_admin_name)"
@@ -81,15 +77,6 @@ config:
 			-subj "$(certificate_subj)"; \
 	else\
 		echo "ssl certificate already exists, skipping..."; \
-	fi
-
-create-secret:	#expected arguments: filepath=<path> content=<content>
-	@test -n "$(filepath)" || (echo "missing filepath!" && exit 1)
-	@if [ ! -f "$(filepath)" ];	then \
-		test -n "$(content)" || (echo "missing $(filepath) content!" && exit 1); \
-		echo -n "$(content)" > "$(filepath)"; \
-	else\
-		echo "$(filepath) already exists, skipping..."; \
 	fi
 ############################################################################################################################
 
@@ -127,7 +114,6 @@ stop:
 
 #################################### REMOVE CONTAINERS ########################################################
 clean:	stop
-#	delete inception related container
 	@if [ -n "$$(docker ps -a -q -f name=$(name))" ]; then \
 		mariadb_containers="$$(docker ps -a -q -f name=$(name)_$(services_mariadb))"; \
 		wordpress_containers="$$(docker ps -a -q -f name=$(name)_$(services_wordpress))"; \
@@ -191,23 +177,26 @@ fclean:	clean
 	sudo rm -rf ${HOME}/data
 #############################################################################################################
 
-make-action:
-	@if [ -z "$(action)" ]; then \
-		echo "cannot apply empty action to items"; \
-		exit 1; \
-	fi
-	@if [ -z "$(list)" ]; then \
-		echo "list is empty"; \
-		exit 0; \
-	else \
-		for item in "$(list)"; do\
-			$(action) $$item || echo "skipping $$item..."; \
-		done \
-	fi
-
 
 ####### REBUILD #####
 re:	fclean all		#
 #####################
 
-.PHONY:	all create clean stop re check-env check-config create-secret
+
+.PHONY:	all create clean stop re check-env check-config create-secret config-error
+
+#	HELPER RULES
+create-secret:	#expected arguments: filepath=<path> content=<content>
+	@test -n "$(filepath)" || (echo "missing filepath!" && exit 1)
+	@if [ ! -f "$(filepath)" ];	then \
+		test -n "$(content)" || (echo "missing $(filepath) content!" && exit 1); \
+		echo -n "$(content)" > "$(filepath)"; \
+	else\
+		echo "$(filepath) already exists, skipping..."; \
+	fi
+
+config-error:
+	@file="$(config)" && \
+	arg_name=$$(basename "$$file" .txt) && \
+	echo "$$file not present in secrets folder, add it manually or run 'make config $$arg_name=<value>'"
+	@exit 1

@@ -3,7 +3,8 @@ FROM	alpine:3.19.4
 #	copy necessary setup files
 COPY ./tools/setup_mariadb.sh /root/
 COPY ./tools/test_environment.sh /root/
-RUN chmod +x /root/setup_mariadb.sh /root/test_environment.sh
+COPY ./tools/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /root/setup_mariadb.sh /root/test_environment.sh /usr/local/bin/entrypoint.sh
 
 ARG MARIADB_USER_ARG=${MARIADB_USER}
 ARG MARIADB_DATADIR_ARG=${MARIADB_DATADIR}
@@ -40,4 +41,4 @@ USER	$MARIADB_USER
 WORKDIR	$MARIADB_DATADIR
 
 #	start mariadb server
-ENTRYPOINT	mariadbd-safe --user="$MARIADB_USER" --datadir="$MARIADB_DATADIR"
+ENTRYPOINT ["entrypoint.sh"]
