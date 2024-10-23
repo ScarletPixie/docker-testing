@@ -26,11 +26,14 @@ check-env:																				#
 	@test -n "$(WP_TITLE)"			||	(echo "WP_TITLE is not set" && exit 1)			#
 #########################################################################################
 
+define print_error
+	make --no-print-directory config-error
+endef
 
 ############################## CHECK IF ALL NECESSARY SECRET FILES EXIST ########################################
 check-config:																									#
 ## MARIADB ######################################################################################################
-	@test -n "$$(cat secrets/db_root_password.txt)"		||	(echo "no db_root_password set" && exit 1)			#
+	@test -n "$$(cat secrets/db_root_password.txt)"		||	($(call print_error, config=db_root_password.txt))	#
 	@test -n "$$(cat secrets/db_user_password.txt)"		||	(echo "no db_user_password set" && exit 1)			#
 ## REDIS ########################################################################################################
 	@test -n "$$(cat secrets/redis_password.txt)"		||	(echo "no redis_password set" && exit 1)			#
@@ -44,6 +47,11 @@ check-config:																									#
 ## SSL CERTIFICATES #############################################################################################
 	@test -n "$$(find secrets -name wordpress.crt)"		||	(echo "missing wordpress.crt" && exit 1)			#
 	@test -n "$$(find secrets -name wordpress.key)"		||	(echo "missing wordpress.crt" && exit 1)			#
+
+
+config-error:																									#
+	@echo "$(config) not present in secrets folder, add it manually of run 'make config $(config)=<value>"		#
+	@exit 1																										#
 #################################################################################################################
 
 
