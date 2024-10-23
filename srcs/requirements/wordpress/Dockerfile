@@ -5,7 +5,19 @@ RUN	mkdir -p /var/www/html/
 WORKDIR	/var/www/html
 ADD	https://wordpress.org/latest.zip /var/www/html
 ADD	https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /var/www/html
-RUN	unzip latest.zip && rm latest.zip && chmod +x wp-cli.phar && mv wp-cli.phar wordpress
+
+#	set envs
+ARG	DOMAIN_NAME_ARG
+ARG	WP_TITLE_ARG
+ARG	WP_USERS_ARG
+ARG	DB_USER_ARG
+ARG	DB_HOST_ARG
+ENV	DOMAIN_NAME=${DOMAIN_NAME_ARG}
+ENV	WP_TITLE=${WP_TITLE_ARG}
+ENV	WP_USERS=${WP_USERS_ARG}
+ENV	DB_USER=${DB_USER_ARG}
+ENV	DB_HOST=${DB_HOST_ARG}
+
 
 #	copy scripts
 COPY tools/test_environment.sh /root/
@@ -13,40 +25,16 @@ COPY tools/entrypoint.sh /usr/bin/entrypoint
 RUN	chmod +x /root/test_environment.sh
 RUN	chmod +x /usr/bin/entrypoint
 
-#	mariadb
-ARG	MYSQL_USER_ARG
-ARG	MYSQL_PASSWORD_ARG
-
-#	wp admin
-ARG	WP_ADMIN_ARG
-ARG	WP_ADMIN_EMAIL_ARG
-ARG	WP_ADMIN_PASSWORD_ARG
-
-#	website settings
-ARG	WP_TITLE_ARG
-ARG	DOMAIN_NAME_ARG
-
-#	non admin wp user
-ARG	WP_USER_ARG
-ARG	WP_EMAIL_ARG
-ARG	WP_PASSWORD_ARG
-
-#	define env vars and store password
-ENV WP_TITLE=$WP_TITLE_ARG
-ENV DOMAIN_NAME=$DOMAIN_NAME_ARG
-ENV	MYSQL_USER=$MYSQL_USER_ARG
-ENV	WP_ADMIN=$WP_ADMIN_ARG
-ENV	WP_ADMIN_EMAIL=$WP_ADMIN_EMAIL_ARG
-ENV	WP_USER=$WP_USER_ARG
-ENV	WP_EMAIL=$WP_EMAIL_ARG
-
-#	sensitive data
-RUN	echo "${MYSQL_PASSWORD_ARG}" > /tmp/mysql_password
-RUN	echo "${WP_ADMIN_PASSWORD_ARG}" > /tmp/wp_admin_password
-RUN	echo "${WP_PASSWORD_ARG}" > /tmp/wp_password
 
 #	check if all necessary data is present
-RUN	/root/test_environment.sh
+RUN	--mount=type=secret,id=wp_admin_name \
+	--mount=type=secret,id=wp_admin_email \
+	--mount=type=secret,id=wp_admin_password \
+	--mount=type=secret,id=wp_user_name \
+	--mount=type=secret,id=wp_user_email \
+	--mount=type=secret,id=wp_user_password \
+	--mount=type=secret,id=db_user_password \
+	/root/test_environment.sh
 
 #	install necessary packages
 RUN	apk update && apk upgrade && apk add php82-fpm wget php php-phar php-mysqli php-mbstring
@@ -58,12 +46,10 @@ RUN sed -i "/user = nobody/d" /etc/php82/php-fpm.d/www.conf
 
 #	create non root user anse set necessary permissions
 RUN	adduser --ingroup www-data -DH www-data
-RUN	chown -R www-data:www-data /var/log/php82/
-RUN	chown -R www-data:www-data /var/www/html/
-RUN	chown -R www-data:www-data /tmp/
-RUN	chmod -R 777 /tmp
+RUN	chown -R www-data:www-data /var/log/php82/ /var/www/html/
+USER	www-data
+RUN	unzip latest.zip; rm latest.zip; mv wp-cli.phar wordpress
 
 #	init
-USER	www-data
 EXPOSE	9000
 ENTRYPOINT	[ "entrypoint" ]

@@ -10,7 +10,6 @@ services_mariadb	:= mariadb
 services_wordpress	:= wordpress
 
 ###	RULES
-
 ############################# BUILD AND START CONTAINERS ################################
 all:	create																			#
 #########################################################################################
@@ -25,8 +24,6 @@ check-env:																				#
 	@test -n "$(MARIADB_USER)"		||	(echo "MARIADB_USER is not set" && exit 1)		#
 	@test -n "$(MARIADB_DATADIR)"	||	(echo "MARIADB_DATADIR is not set" && exit 1)	#
 	@test -n "$(WP_TITLE)"			||	(echo "WP_TITLE is not set" && exit 1)			#
-	@test -n "$(WP_ADMIN)"			||	(echo "WP_ADMIN is not set" && exit 1)			#
-	@test -n "$(WP_USER)"			||	(echo "WP_USER is not set" && exit 1)			#
 #########################################################################################
 
 
@@ -45,8 +42,8 @@ check-config:																									#
 	@test -n "$$(cat secrets/wp_user_email.txt)"		||	(echo "no wp_user_email set" && exit 1)				#
 	@test -n "$$(cat secrets/wp_user_password.txt)"		||	(echo "no wp_user_password set" && exit 1)			#
 ## SSL CERTIFICATES #############################################################################################
-	@test -n "$$(find secrets -name wordpress.crt)"		||	(echo "missing certificate file .crt" && exit 1)	#
-	@test -n "$$(find secrets -name wordpress.key)"		||	(echo "missing certificate file .crt" && exit 1)	#
+	@test -n "$$(find secrets -name wordpress.crt)"		||	(echo "missing wordpress.crt" && exit 1)			#
+	@test -n "$$(find secrets -name wordpress.key)"		||	(echo "missing wordpress.crt" && exit 1)			#
 #################################################################################################################
 
 
@@ -91,7 +88,7 @@ create-secret:	#expected arguments: filepath=<path> content=<content>
 
 ########################## BUILD AND START CONTAINERS ###################################
 create:	$(MARIADB_VOL) $(WORDPRESS_VOL) check-env check-config							#
-	@docker swarm init || echo "already in swarm mode, skipping..."						#
+	@docker swarm init 2> /dev/null || echo "already in swarm mode, skipping..."		#
 	@cd srcs && docker compose -p $(name) up -d											#
 #########################################################################################
 
@@ -157,7 +154,7 @@ fclean:	clean
 
 #	'remove' docker volumes
 	@if [ -n "$$(docker volume ls -qf name=$(name))" ]; then \
-		wordpress_volume="$$(docker volume ls -qf name=$(name)_$(services_wordpress))"; \
+		wordpress_volume="$$(docker volume ls -qf name=$(name)_$(services_wordpress)_vol)"; \
 		mariadb_volume="$$(docker volume ls -qf name=$(name)_$(services_mariadb)_vol)"; \
 		for volume in $$wordpress_volume $$mariadb_volume; do \
 			docker volume rm $$volume; \
@@ -185,6 +182,21 @@ fclean:	clean
 
 	sudo rm -rf ${HOME}/data
 #############################################################################################################
+
+make-action:
+	@if [ -z "$(action)" ]; then \
+		echo "cannot apply empty action to items"; \
+		exit 1; \
+	fi
+	@if [ -z "$(list)" ]; then \
+		echo "list is empty"; \
+		exit 0; \
+	else \
+		for item in "$(list)"; do\
+			$(action) $$item || echo "skipping $$item..."; \
+		done \
+	fi
+
 
 ####### REBUILD #####
 re:	fclean all		#
