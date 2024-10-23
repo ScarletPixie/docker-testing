@@ -6,6 +6,7 @@ COPY ./tools/test_environment.sh /root/
 COPY ./tools/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /root/setup_mariadb.sh /root/test_environment.sh /usr/local/bin/entrypoint.sh
 
+#	set environment
 ARG MARIADB_USER_ARG=${MARIADB_USER}
 ARG MARIADB_DATADIR_ARG=${MARIADB_DATADIR}
 ENV MARIADB_USER=${MARIADB_USER_ARG}
