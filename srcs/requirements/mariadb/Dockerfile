@@ -1,52 +1,42 @@
 FROM	alpine:3.19.4
 
 #	copy necessary setup files
-COPY ./tools/setup_mariadb.sh /root/
-COPY ./tools/test_environment.sh /root/
-RUN chmod +x /root/setup_mariadb.sh
-RUN chmod +x /root/test_environment.sh
+COPY ./conf/setup_mariadb.sh ./tools/test_environment.sh ./tools/entrypoint.sh /etc/init.d/
+RUN chmod +x /etc/init.d/setup_mariadb.sh /etc/init.d/test_environment.sh /etc/init.d/entrypoint.sh
 
-#	define args, passed by compose
-ARG	MYSQL_USER_ARG
-ARG MYSQL_PASSWORD_ARG
-ARG	MYSQL_DATADIR_ARG
-ARG MYSQL_ROOT_PASSWORD_ARG
+#	set environment
+ARG MARIADB_USER_ARG=${MARIADB_USER}
+ARG MARIADB_DATADIR_ARG=${MARIADB_DATADIR}
+ENV MARIADB_USER=${MARIADB_USER_ARG} MARIADB_DATADIR=${MARIADB_DATADIR_ARG}
 
-#	store arg values into container
-ENV	MYSQL_USER=$MYSQL_USER_ARG
-ENV	MYSQL_DATADIR=$MYSQL_DATADIR_ARG
-
-#	test if necessary arguments are set
-RUN	/root/test_environment.sh "${MYSQL_PASSWORD_ARG}" "${MYSQL_ROOT_PASSWORD_ARG}"
+#	define build secrets and test if all variables are set
+RUN --mount=type=secret,id=db_user_password \
+	--mount=type=secret,id=db_root_password \
+	/etc/init.d/test_environment.sh "$(cat /run/secrets/db_user_password)" "$(cat /run/secrets/db_root_password)"
 
 #	install mariadb
-RUN	apk update && apk upgrade && apk add --no-cache mariadb && apk add --no-cache mariadb-client
+RUN	apk update && apk upgrade && apk add --no-cache mariadb mariadb-client
 
 #	create necessary directories
-RUN	mkdir -p /run/mysqld
-RUN	mkdir -p /var/log/mysql
+RUN	mkdir -p /run/mysqld /var/log/mysql
 
 #	create non root user
-RUN	adduser -DH ${MYSQL_USER}
+RUN	adduser -DH ${MARIADB_USER}
 
 #	setup mariadb
-RUN	/root/setup_mariadb.sh "${MYSQL_PASSWORD_ARG}" "${MYSQL_ROOT_PASSWORD_ARG}"
+RUN --mount=type=secret,id=db_user_password \
+	--mount=type=secret,id=db_root_password \
+	/etc/init.d/setup_mariadb.sh "$(cat /run/secrets/db_user_password)" "$(cat /run/secrets/db_root_password)"
 
-#	set permissions
-#	ownership for necessary directories
-RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} ${MYSQL_DATADIR}
-RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} /run/mysqld/
-RUN	chown -R ${MYSQL_USER}:${MYSQL_USER} /var/log/mysql/
-
-#	mariadb server's configuration files
-RUN	chown ${MYSQL_USER}:${MYSQL_USER} /etc/my.cnf.d/mariadb-server.cnf
-RUN	chown ${MYSQL_USER}:${MYSQL_USER} /etc/my.cnf
+#	set ownership for non root user on necessary directories
+RUN	chown -R ${MARIADB_USER}:${MARIADB_USER} ${MARIADB_DATADIR} /run/mysqld/ /var/log/mysql/ /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf
 
 #	expose port 3306 to other container on same network
 EXPOSE	3306
 
 #	switch to non root user
-USER	$MYSQL_USER
+USER	$MARIADB_USER
+WORKDIR	$MARIADB_DATADIR
 
 #	start mariadb server
-CMD	mariadbd-safe --user="$MYSQL_USER" --datadir="$MYSQL_DATADIR"
+ENTRYPOINT [ "/etc/init.d/entrypoint.sh"]

@@ -1,40 +1,35 @@
 FROM	alpine:3.19.4
-RUN	apk update && apk upgrade && apk add nginx && apk add openssl
 
-ARG DOMAIN_NAME
-ENV DOMAIN_NAME=$DOMAIN_NAME
+#	install nginx
+RUN	apk update && apk upgrade && apk add --no-cache nginx
 
-COPY tools/create_wordpress_host.sh /root/
-RUN chmod +x /root/create_wordpress_host.sh
+#	define necessary envs
+ARG DOMAIN_NAME_ARG
+ENV DOMAIN_NAME=$DOMAIN_NAME_ARG USER=www-data TLS_VER=1.2
+
+#	copy scripts
+COPY conf/setup_hosts.sh /root/
+RUN chmod +x /root/setup_hosts.sh
 
 #	create non root user
 RUN adduser --ingroup www-data -DH www-data
 
+#	create necessary directories && files
+RUN	mkdir -p /run/nginx/ /etc/nginx/ssl; touch /var/lib/nginx/logs/error.log /var/lib/nginx/logs/access.log
+
 #	configure wordpress virtual host
-RUN /root/create_wordpress_host.sh
+RUN	--mount=type=secret,id=wp_cert \
+	--mount=type=secret,id=wp_cert_key \
+	/root/setup_hosts.sh "$(cat /run/secrets/wp_cert)" "$(cat /run/secrets/wp_cert_key)"
 
-#	set permissions for non root user
-RUN	mkdir -p /run/nginx/
-RUN touch /var/lib/nginx/logs/error.log; touch /var/lib/nginx/logs/access.log
-RUN chown www-data:www-data /var/lib/nginx/logs/error.log; chown www-data:www-data /var/lib/nginx/logs/access.log
-RUN chown -R www-data:www-data /run/nginx/
-RUN chown -R www-data:www-data /etc/nginx/http.d/wordpress.conf
-RUN chown -R www-data:www-data /var/lib/nginx/
-RUN chown -R www-data:www-data /etc/nginx/ssl/wordpress.crt
-RUN chown -R www-data:www-data /etc/nginx/ssl/wordpress.key
-RUN chmod -R 700 /etc/nginx/http.d/wordpress.conf
-RUN chmod -R 700 /var/lib/nginx/
-RUN chmod 700 /etc/nginx/ssl/wordpress.crt; chmod 700 /etc/nginx/ssl/wordpress.key
-RUN chmod 700 /var/lib/nginx/logs/error.log; chmod 700 /var/lib/nginx/logs/access.log
-RUN chmod 700 /run/nginx/
+#	set ownership on necessary directories/fikes
+RUN chown www-data:www-data /var/lib/nginx/logs/error.log /var/lib/nginx/logs/access.log
+RUN chown -R www-data:www-data /run/nginx/ /etc/nginx/http.d/wordpress.conf /var/lib/nginx/
+RUN chmod -R 700 /etc/nginx/http.d/wordpress.conf /var/lib/nginx/ \
+	/var/lib/nginx/logs/error.log /var/lib/nginx/logs/access.log
 
-#	remove tlsv1 from default setting in nginx and remove default nginx page
-RUN sed -i '/ssl_protocols.*/c\ssl_protocols TLSv1.2 TLSv1.3;' /etc/nginx/nginx.conf
-RUN rm -f /etc/nginx/http.d/default.conf
-
-#	change nginx user
-RUN sed -i '/user nginx/d' /etc/nginx/nginx.conf
-
-EXPOSE 443
-USER www-data
-CMD [ "nginx", "-g", "daemon off;" ]
+#	switch to non root user
+WORKDIR		/etc/nginx
+USER		www-data
+EXPOSE		443
+ENTRYPOINT	[ "nginx", "-g", "daemon off;" ]
