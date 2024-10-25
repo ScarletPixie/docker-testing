@@ -208,7 +208,7 @@ config-error:
 
 valid-file:
 	@export file_contents="$$(cat $(arg) | tr -d '[:space:]')" file_line_num="$$(wc -l < $(arg) | tr -d '\n')"; \
-	if [ -z "$$file_contents" ] || [ -z "$$file_line_num" ] || [ "$$file_line_num" -gt 1 ]; then \
+	if [ -z "$$file_contents" ] || [ -z "$$file_line_num" ] || [ "$$file_line_num" -gt 1 ] || [ "$$file_contents" != "$$(cat $(arg))" ]; then \
 		exit 1; \
 	fi
 
