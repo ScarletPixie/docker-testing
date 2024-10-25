@@ -9,9 +9,28 @@ services_nginx		:= nginx
 services_mariadb	:= mariadb
 services_wordpress	:= wordpress
 
+
+define print_error
+	make --no-print-directory config-error config=$(1) 2> /dev/null
+endef
+define valid_certificate
+	make --no-print-directory valid-certificate arg=$(1) 2> /dev/null
+endef
+define valid_file
+	make --no-print-directory valid-file arg=$(1) 2> /dev/null
+endef
+
+
 ###	RULES
 ############################# BUILD AND START CONTAINERS ################################
 all:	create																			#
+#########################################################################################
+
+
+########################## BUILD AND START CONTAINERS ###################################
+create:	$(MARIADB_VOL) $(WORDPRESS_VOL) check-env check-config							#
+	@docker swarm init 2> /dev/null || echo "already in swarm mode, skipping..."		#
+	@cd srcs && docker compose -p $(name) up -d											#
 #########################################################################################
 
 
@@ -26,15 +45,6 @@ check-env:																				#
 	@test -n "$(WP_TITLE)"			||	(echo "WP_TITLE is not set" && exit 1)			#
 #########################################################################################
 
-define print_error
-	make --no-print-directory config-error config=$(1) 2> /dev/null
-endef
-define valid_certificate
-	make --no-print-directory valid-certificate arg=$(1) 2> /dev/null
-endef
-define valid_file
-	make --no-print-directory valid-file arg=$(1) 2> /dev/null
-endef
 
 ################################## CHECK IF ALL NECESSARY SECRET FILES EXIST ########################################
 check-config:																										#
@@ -49,9 +59,8 @@ check-config:																										#
 	@$(call valid_file, arg=secrets/wp_user_email.txt )		||	$(call print_error, config=wp_user_email.txt)		#
 	@$(call valid_file, arg=secrets/wp_user_password.txt )	||	$(call print_error, config=wp_user_password.txt)	#
 ## SSL CERTIFICATES #################################################################################################
-	@$(call valid_certificate arg)																						#
+	@$(call valid_certificate arg)																					#
 #####################################################################################################################
-
 
 
 ####################################### CREATE SECRET FILES FROM ARGS ######################################################
@@ -80,13 +89,6 @@ config:
 		echo "ssl certificate already exists, skipping..."; \
 	fi
 ############################################################################################################################
-
-
-########################## BUILD AND START CONTAINERS ###################################
-create:	$(MARIADB_VOL) $(WORDPRESS_VOL) check-env check-config							#
-	@docker swarm init 2> /dev/null || echo "already in swarm mode, skipping..."		#
-	@cd srcs && docker compose -p $(name) up -d											#
-#########################################################################################
 
 
 ############################# CREATE VOLUME FOLDERS #####################################
