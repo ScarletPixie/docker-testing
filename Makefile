@@ -176,11 +176,17 @@ fclean:	clean
 	else \
 		echo "no wordpress <-> nginx network set up, skipping..."; \
 	fi
+	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_wordpress)_to_$(services_redis))" ]; then \
+		docker network rm $(name)_$(services_wordpress)_to_$(services_redis); \
+	else \
+		echo "no wordpress <-> nginx network set up, skipping..."; \
+	fi
 	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_mariadb)_to_$(services_wordpress))" ]; then \
 		docker network rm $(name)_$(services_mariadb)_to_$(services_wordpress); \
 	else \
 		echo "no mariadb <-> wordpress network set up, skipping..."; \
 	fi
+
 
 	sudo rm -rf ${HOME}/data
 #############################################################################################################

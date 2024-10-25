@@ -6,6 +6,10 @@ services:
     build:
       context: ./requirements/bonus/redis
       dockerfile: Dockerfile
+      secrets:
+        - redis_password
+    networks:
+    - wordpress_to_redis
   #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#
 
 
@@ -22,6 +26,7 @@ services:
       secrets:
         - db_user_password
         - db_root_password
+        - redis_password
     volumes:
       - mariadb_vol:${MARIADB_DATADIR}
     networks:
@@ -54,6 +59,7 @@ services:
     networks:
       - mariadb_to_wordpress
       - wordpress_to_nginx
+      - wordpress_to_redis
     depends_on:
       - mariadb
     volumes:
@@ -104,11 +110,12 @@ networks:
 # mariadb <-> wordpress
   mariadb_to_wordpress:
     driver: bridge
-
 # wordpress <-> nginx
   wordpress_to_nginx:
     driver: bridge
-
+# wordpress <-> redis
+  wordpress_to_redis:
+    driver: bridge
 # nginx <-> host
   nginx_to_host:
     driver: bridge
