@@ -32,3 +32,6 @@ make config \
 ###	ssl certificates
 -	wordpress.crt
 -	wordpress.key
+
+####	OBSERVATIONS
+Only one line per file (one line with a break at the end is acceptable).
