@@ -2,13 +2,13 @@
 
 set -e
 
-WP_ADMIN_NAME="$(cat /run/secrets/wp_admin_name)"
-WP_ADMIN_EMAIL="$(cat /run/secrets/wp_admin_email)"
-WP_ADMIN_PASSWORD="$(cat /run/secrets/wp_admin_password)"
-WP_USER_NAME="$(cat /run/secrets/wp_user_name)"
-WP_USER_EMAIL="$(cat /run/secrets/wp_user_email)"
-WP_USER_PASSWORD="$(cat /run/secrets/wp_user_password)"
-DB_PASSWORD="$(cat /run/secrets/db_user_password)"
+WP_ADMIN_NAME="$(cat /run/secrets/wp_admin_name | tr -d '[:space:]')"
+WP_ADMIN_EMAIL="$(cat /run/secrets/wp_admin_email | tr -d '[:space:]')"
+WP_ADMIN_PASSWORD="$(cat /run/secrets/wp_admin_password | tr -d '[:space:]')"
+WP_USER_NAME="$(cat /run/secrets/wp_user_name | tr -d '[:space:]')"
+WP_USER_EMAIL="$(cat /run/secrets/wp_user_email | tr -d '[:space:]')"
+WP_USER_PASSWORD="$(cat /run/secrets/wp_user_password | tr -d '[:space:]')"
+DB_PASSWORD="$(cat /run/secrets/db_user_password | tr -d '[:space:]')"
 
 test -n "$WP_TITLE" || (echo "WP_TITLE is not set" && false)
 test -n "$DOMAIN_NAME" || (echo "DOMAIN_NAME is not set" && false)

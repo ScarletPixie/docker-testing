@@ -9,7 +9,9 @@ services:
       secrets:
         - redis_password
     networks:
-    - wordpress_to_redis
+      - wordpress_to_redis
+    volumes:
+      - wordpress_vol:/var/www/html/wordpress
   #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#
 
 
@@ -62,6 +64,7 @@ services:
       - wordpress_to_redis
     depends_on:
       - mariadb
+      - redis
     volumes:
       - wordpress_vol:/var/www/html/wordpress
     ports:
@@ -76,6 +79,7 @@ services:
       - wp_admin_email
       - wp_admin_password
       - db_user_password
+      - redis_password
     environment:
       - DOMAIN_NAME=${DOMAIN_NAME}
       - WP_TITLE=${WP_TITLE}

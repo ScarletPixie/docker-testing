@@ -13,7 +13,7 @@ ARG	WP_TITLE_ARG
 ARG	WP_USERS_ARG
 ARG	DB_USER_ARG
 ARG	DB_HOST_ARG
-ENV	DOMAIN_NAME=${DOMAIN_NAME_ARG} WP_TITLE=${WP_TITLE_ARG}	WP_USERS=${WP_USERS_ARG} DB_USER=${DB_USER_ARG} DB_HOST=${DB_HOST_ARG}
+ENV	DOMAIN_NAME=${DOMAIN_NAME_ARG} WP_TITLE=${WP_TITLE_ARG}	WP_USERS=${WP_USERS_ARG} DB_USER=${DB_USER_ARG} DB_HOST=${DB_HOST_ARG} WP_CLI_CACHE_DIR=/var/www/html
 
 
 #	copy scripts
@@ -33,7 +33,7 @@ RUN	--mount=type=secret,id=wp_admin_name \
 	/root/test_environment.sh
 
 #	install necessary packages
-RUN	apk update && apk upgrade && apk add php82-fpm wget php php-phar php-mysqli php-mbstring
+RUN	apk update && apk upgrade && apk add --no-cache php82-fpm wget php php-phar php-mysqli php-mbstring php-tokenizer
 
 #	accept non localhost connections and delete user/group directive
 RUN sed -i "s|listen =.*|listen = 0.0.0.0:9000|" /etc/php82/php-fpm.d/www.conf
