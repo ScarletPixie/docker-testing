@@ -14,7 +14,6 @@ make config \
 	wp_user_name="<value" \
 	wp_user_password="<value>" \
 	wp_user_email="<value>" \
-	redis_password="<value>" \
 	certificate_subj="/C=<country>/ST=<state>/L=<city>/O=<organization name>/OU=<organization unit (optional)>/CN=<domain name>"
 ```
 
@@ -29,9 +28,6 @@ make config \
 -	wp_user_name.txt
 -	wp_user_password.txt
 -	wp_user_email.txt
-
-###	redis credentials
--	redis_password.txt
 
 ###	ssl certificates
 -	wordpress.crt

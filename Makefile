@@ -35,8 +35,6 @@ check-config:																												#
 ## MARIADB ##################################################################################################################
 	@test -n "$$(cat secrets/db_root_password.txt 2> /dev/null)"	||	$(call print_error, config=db_root_password.txt)	#
 	@test -n "$$(cat secrets/db_user_password.txt 2> /dev/null)"	||	$(call print_error, config=db_user_password.txt)	#
-## REDIS ####################################################################################################################
-	@test -n "$$(cat secrets/redis_password.txt 2> /dev/null)"		||	$(call print_error, config=redis_password.txt)		#
 ## WORDPRESS ################################################################################################################
 	@test -n "$$(cat secrets/wp_admin_name.txt 2> /dev/null)"		||	$(call print_error, config=wp_admin_name.txt)		#
 	@test -n "$$(cat secrets/wp_admin_email.txt  2> /dev/null)"		||	$(call print_error, config=wp_admin_email.txt)		#
@@ -55,8 +53,6 @@ check-config:																												#
 config:
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_root_password.txt" content="$(db_root_password)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_user_password.txt" content="$(db_user_password)"
-
-	@$(MAKE) --no-print-directory create-secret filepath="secrets/redis_password.txt" content="$(redis_password)"
 
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_name.txt" content="$(wp_admin_name)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_password.txt" content="$(wp_admin_password)"
