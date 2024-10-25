@@ -1,21 +1,18 @@
 FROM	alpine:3.19.4
 
 #	copy necessary setup files
-COPY ./tools/setup_mariadb.sh /root/
-COPY ./tools/test_environment.sh /root/
-COPY ./tools/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /root/setup_mariadb.sh /root/test_environment.sh /usr/local/bin/entrypoint.sh
+COPY ./conf/setup_mariadb.sh ./tools/test_environment.sh ./tools/entrypoint.sh /etc/init.d/
+RUN chmod +x /etc/init.d/setup_mariadb.sh /etc/init.d/test_environment.sh /etc/init.d/entrypoint.sh
 
 #	set environment
 ARG MARIADB_USER_ARG=${MARIADB_USER}
 ARG MARIADB_DATADIR_ARG=${MARIADB_DATADIR}
-ENV MARIADB_USER=${MARIADB_USER_ARG}
-ENV MARIADB_DATADIR=${MARIADB_DATADIR_ARG}
+ENV MARIADB_USER=${MARIADB_USER_ARG} MARIADB_DATADIR=${MARIADB_DATADIR_ARG}
 
 #	define build secrets and test if all variables are set
 RUN --mount=type=secret,id=db_user_password \
 	--mount=type=secret,id=db_root_password \
-	/root/test_environment.sh "$(cat /run/secrets/db_user_password)" "$(cat /run/secrets/db_root_password)"
+	/etc/init.d/test_environment.sh "$(cat /run/secrets/db_user_password)" "$(cat /run/secrets/db_root_password)"
 
 #	install mariadb
 RUN	apk update && apk upgrade && apk add --no-cache mariadb mariadb-client
@@ -29,7 +26,7 @@ RUN	adduser -DH ${MARIADB_USER}
 #	setup mariadb
 RUN --mount=type=secret,id=db_user_password \
 	--mount=type=secret,id=db_root_password \
-	/root/setup_mariadb.sh "$(cat /run/secrets/db_user_password)" "$(cat /run/secrets/db_root_password)"
+	/etc/init.d/setup_mariadb.sh "$(cat /run/secrets/db_user_password)" "$(cat /run/secrets/db_root_password)"
 
 #	set ownership for non root user on necessary directories
 RUN	chown -R ${MARIADB_USER}:${MARIADB_USER} ${MARIADB_DATADIR} /run/mysqld/ /var/log/mysql/ /etc/my.cnf.d/mariadb-server.cnf /etc/my.cnf
@@ -42,4 +39,4 @@ USER	$MARIADB_USER
 WORKDIR	$MARIADB_DATADIR
 
 #	start mariadb server
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT [ "/etc/init.d/entrypoint.sh"]
