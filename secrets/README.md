@@ -1,5 +1,5 @@
 #	Secrets Folder
-This folder is destined to store sensitive information such as database password, credentials.
+This folder is destined to store sensitive information such as database password, wordpress credentials.
 
 ##	Mandatory files
 The files below are ignored by git and are supposed to be either placed manually or passed as arguments to:
