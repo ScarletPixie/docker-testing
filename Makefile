@@ -64,7 +64,6 @@ rebuild-service:																		#
 	@cd srcs && docker compose -p $(name) up -d --build $(service)						#
 rebuild-all-services:																	#
 	@cd srcs && docker compose -p $(name) up -d --build									#
-#	delete all data and rebuild everything												#
 re:	fclean all																			#
 #########################################################################################
 
