@@ -149,9 +149,6 @@ secrets:
     file: ../secrets/db_root_password.txt
   db_user_password:
     file: ../secrets/db_user_password.txt
-# redis
-  redis_password:
-    file: ../secrets/redis_password.txt
 # wordpress
   wp_admin_name:
     file: ../secrets/wp_admin_name.txt
@@ -170,3 +167,6 @@ secrets:
     file: ../secrets/wordpress.crt
   wp_cert_key:
     file: ../secrets/wordpress.key
+# redis password
+  redis_password:
+    file: ../secrets/redis_password.txt

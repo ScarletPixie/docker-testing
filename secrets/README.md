@@ -1,5 +1,5 @@
 #	Secrets Folder
-This folder is destined to store sensitive information such as database password, credentials.
+This folder is destined to store sensitive information such as database password, wordpress credentials.
 
 ##	Mandatory files
 The files below are ignored by git and are supposed to be either placed manually or passed as arguments to:
@@ -14,7 +14,6 @@ make config \
 	wp_user_name="<value" \
 	wp_user_password="<value>" \
 	wp_user_email="<value>" \
-	redis_password="<value>" \
 	certificate_subj="/C=<country>/ST=<state>/L=<city>/O=<organization name>/OU=<organization unit (optional)>/CN=<domain name>"
 ```
 
@@ -30,9 +29,9 @@ make config \
 -	wp_user_password.txt
 -	wp_user_email.txt
 
-###	redis credentials
--	redis_password.txt
-
 ###	ssl certificates
 -	wordpress.crt
 -	wordpress.key
+
+####	OBSERVATIONS
+Only one line per file (one line with a break at the end is acceptable).

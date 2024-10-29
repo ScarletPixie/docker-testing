@@ -33,15 +33,15 @@ RUN	--mount=type=secret,id=wp_admin_name \
 	/root/test_environment.sh
 
 #	install necessary packages
-RUN	apk update && apk upgrade && apk add --no-cache php82-fpm wget php php-phar php-mysqli php-mbstring php-tokenizer
+RUN	apk update && apk upgrade && apk add --no-cache php82-fpm wget php php-phar php-mysqli php-mbstring php-tokenizer php-gd
 
 #	accept non localhost connections and delete user/group directive
-RUN sed -i "s|listen =.*|listen = 0.0.0.0:9000|" /etc/php82/php-fpm.d/www.conf
-RUN sed -i "/group = nobody/d" /etc/php82/php-fpm.d/www.conf && sed -i "/user = nobody/d" /etc/php82/php-fpm.d/www.conf
+RUN	sed -i "s|listen =.*|listen = 0.0.0.0:9000|" /etc/php82/php-fpm.d/www.conf && \
+	sed -i "/group = nobody/d" /etc/php82/php-fpm.d/www.conf && sed -i "/user = nobody/d" /etc/php82/php-fpm.d/www.conf
 
 #	create non root user anse set necessary permissions
 EXPOSE		9000
-RUN			adduser --ingroup www-data -DH www-data && chown -R www-data:www-data /var/log/php82/ /var/www/html/
+RUN			adduser --ingroup www-data -DH www-data && chown -R www-data:www-data /var/log/php82/ /var/www/html/ /etc/php82/php-fpm.d/
 USER		www-data
 RUN			unzip latest.zip; rm latest.zip; mv wp-cli.phar wordpress
 ENTRYPOINT	[ "entrypoint.sh" ]

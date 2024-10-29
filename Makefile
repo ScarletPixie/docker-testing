@@ -4,19 +4,72 @@ include srcs/.env
 #	project name
 name	:= inception
 
-#	service names
-services_nginx		:= nginx
-services_mariadb	:= mariadb
-services_wordpress	:= wordpress
-services_redis		:= redis
+#	helper defines
+define print_error
+	make --no-print-directory config-error config=$(1) 2> /dev/null
+endef
+define valid_certificate
+	make --no-print-directory valid-certificate arg=$(1) 2> /dev/null
+endef
+define valid_file
+	make --no-print-directory valid-file arg=$(1) 2> /dev/null
+endef
 
-###	RULES
-############################# BUILD AND START CONTAINERS ################################
+
+###	MAIN RULES
+########################### BUILD AND START CONTAINERS ##################################
 all:	create																			#
+create:	$(MARIADB_VOL) $(WORDPRESS_VOL) check-env check-config							#
+	@cd srcs && docker compose -p $(name) up -d											#
 #########################################################################################
 
 
-######################### CHECK IF ALL NECESSARY VARS ARE SET ###########################
+############################# CREATE VOLUME FOLDERS #####################################
+$(WORDPRESS_VOL):																		#
+	mkdir -p $(WORDPRESS_VOL)															#
+$(MARIADB_VOL):																			#
+	mkdir -p $(MARIADB_VOL)																#
+#########################################################################################
+
+
+############################### RESTART SERVICES ########################################
+stop:																					#
+	@cd srcs && docker compose -p $(name) stop											#
+start:																					#
+	@cd srcs && docker compose -p $(name) start											#
+restart:																				#
+	@cd srcs && docker compose -p $(name) restart										#
+#########################################################################################
+
+
+################################# REMOVE STUFF ##########################################
+clean:	stop
+	@cd srcs && docker compose -p $(name) down --volumes --rmi all
+fclean:	clean
+	@if [ -n "$$(docker images -aqf 'reference=inception*')" ]; then \
+		$(MAKE) --no-print-directory force-delete; \
+	fi
+	sudo rm -rf ${HOME}/data
+force-delete:
+	docker rm -fv $$(docker ps -aqf 'name=$(name)') 2> /dev/null || true
+	docker rmi -f $$(docker images -aqf 'reference=inception*') 2> /dev/null || true
+	docker volume rm -f $$(docker volume ls -qf 'name=$(name)') 2> /dev/null || true
+#########################################################################################
+
+
+########################################## REBUILDING ###############################################
+#	rebuild changed containers																		#
+rebuild-service:																					#
+	@ if [ -z "$(service)" ]; then echo "usage: make rebuild-service service=<name>"; exit 1; fi	#
+	@cd srcs && docker compose -p $(name) up -d --build $(service)									#
+rebuild-all-services:																				#
+	@cd srcs && docker compose -p $(name) up -d --build												#
+re:	fclean all																						#
+#####################################################################################################
+
+
+#	HELPER RULES
+###################### CHECK IF ALL NECESSARY VARS ARE SET ##############################
 check-env:																				#
 	@test -n "$(USER)"				||	(echo "USER is not set" && exit 1)				#
 	@test -n "$(DOMAIN_NAME)"		||	(echo "DOMAIN_NAME is not set" && exit 1)		#
@@ -27,37 +80,28 @@ check-env:																				#
 	@test -n "$(WP_TITLE)"			||	(echo "WP_TITLE is not set" && exit 1)			#
 #########################################################################################
 
-define print_error
-	make --no-print-directory config-error config=$(1) 2> /dev/null
-endef
 
-######################################### CHECK IF ALL NECESSARY SECRET FILES EXIST #########################################
-check-config:																												#
-## MARIADB ##################################################################################################################
-	@test -n "$$(cat secrets/db_root_password.txt 2> /dev/null)"	||	$(call print_error, config=db_root_password.txt)	#
-	@test -n "$$(cat secrets/db_user_password.txt 2> /dev/null)"	||	$(call print_error, config=db_user_password.txt)	#
-## REDIS ####################################################################################################################
-	@test -n "$$(cat secrets/redis_password.txt 2> /dev/null)"		||	$(call print_error, config=redis_password.txt)		#
-## WORDPRESS ################################################################################################################
-	@test -n "$$(cat secrets/wp_admin_name.txt 2> /dev/null)"		||	$(call print_error, config=wp_admin_name.txt)		#
-	@test -n "$$(cat secrets/wp_admin_email.txt  2> /dev/null)"		||	$(call print_error, config=wp_admin_email.txt)		#
-	@test -n "$$(cat secrets/wp_admin_password.txt  2> /dev/null)"	||	$(call print_error, config=wp_admin_password.txt)	#
-	@test -n "$$(cat secrets/wp_user_name.txt  2> /dev/null)"		||	$(call print_error, config=wp_user_name.txt)		#
-	@test -n "$$(cat secrets/wp_user_email.txt  2> /dev/null)"		||	$(call print_error, config=wp_user_email.txt)		#
-	@test -n "$$(cat secrets/wp_user_password.txt  2> /dev/null)"	||	$(call print_error, config=wp_user_password.txt)	#
-## SSL CERTIFICATES #########################################################################################################
-	@test -n "$$(find secrets -name wordpress.crt)"					||	$(call print_error, config=wordpress.crt)			#
-	@test -n "$$(find secrets -name wordpress.key)"					||	$(call print_error, config=wordpress.key)			#
-#############################################################################################################################
-
+############################### CHECK IF ALL NECESSARY SECRET FILES EXIST ###########################################
+check-config:																										#
+## MARIADB ##########################################################################################################
+	@$(call valid_file, arg=secrets/db_root_password.txt)	||	$(call print_error, config=db_root_password.txt)	#
+	@$(call valid_file, arg=secrets/db_user_password.txt)	||	$(call print_error, config=db_user_password.txt)	#
+## WORDPRESS ########################################################################################################
+	@$(call valid_file, arg=secrets/wp_admin_name.txt)		||	$(call print_error, config=wp_admin_name.txt)		#
+	@$(call valid_file, arg=secrets/wp_admin_email.txt )	||	$(call print_error, config=wp_admin_email.txt)		#
+	@$(call valid_file, arg=secrets/wp_admin_password.txt )	||	$(call print_error, config=wp_admin_password.txt)	#
+	@$(call valid_file, arg=secrets/wp_user_name.txt )		||	$(call print_error, config=wp_user_name.txt)		#
+	@$(call valid_file, arg=secrets/wp_user_email.txt )		||	$(call print_error, config=wp_user_email.txt)		#
+	@$(call valid_file, arg=secrets/wp_user_password.txt )	||	$(call print_error, config=wp_user_password.txt)	#
+## SSL CERTIFICATES #################################################################################################
+	@$(call valid_certificate)																						#
+#####################################################################################################################
 
 
 ####################################### CREATE SECRET FILES FROM ARGS ######################################################
 config:
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_root_password.txt" content="$(db_root_password)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/db_user_password.txt" content="$(db_user_password)"
-
-	@$(MAKE) --no-print-directory create-secret filepath="secrets/redis_password.txt" content="$(redis_password)"
 
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_name.txt" content="$(wp_admin_name)"
 	@$(MAKE) --no-print-directory create-secret filepath="secrets/wp_admin_password.txt" content="$(wp_admin_password)"
@@ -82,126 +126,12 @@ config:
 ############################################################################################################################
 
 
-########################## BUILD AND START CONTAINERS ###################################
-create:	$(MARIADB_VOL) $(WORDPRESS_VOL) check-env check-config							#
-	@docker swarm init 2> /dev/null || echo "already in swarm mode, skipping..."		#
-	@cd srcs && docker compose -p $(name) up -d											#
-#########################################################################################
-
-
-############################# CREATE VOLUME FOLDERS #####################################
-$(WORDPRESS_VOL):																		#
-	mkdir -p $(WORDPRESS_VOL)															#
-$(MARIADB_VOL):																			#
-	mkdir -p $(MARIADB_VOL)																#
-#########################################################################################
-
-
-######################################## STOP SERVICES ######################################################
-stop:
-	@docker swarm leave --force 2> /dev/null || echo "swarm mode already off, skipping...."
-	@if [ -n "$$(docker ps -q -f name=$(name))" ]; then \
-		nginx_containers="$$(docker ps -q -f name=$(name)_$(services_nginx))"; \
-		wordpress_containers="$$(docker ps -q -f name=$(name)_$(services_wordpress))"; \
-		mariadb_containers="$$(docker ps -q -f name=$(name)_$(services_mariadb))"; \
-		redis_containers="$$(docker ps -qf name=$(name)_$(services_redis))"; \
-		for container in $$nginx_containers $$wordpress_containers $$mariadb_containers $$redis_containers; do \
-			docker stop $$container; \
-		done \
-	else \
-		echo "make stop: no containers are currently active"; \
-	fi
-#############################################################################################################
-
-
-#################################### REMOVE CONTAINERS ########################################################
-clean:	stop
-	@if [ -n "$$(docker ps -a -q -f name=$(name))" ]; then \
-		mariadb_containers="$$(docker ps -a -q -f name=$(name)_$(services_mariadb))"; \
-		wordpress_containers="$$(docker ps -a -q -f name=$(name)_$(services_wordpress))"; \
-		nginx_containers="$$(docker ps -a -q -f name=$(name)_$(services_nginx))"; \
-		redis_containers="$$(docker ps -aqf name=$(name)_$(services_redis))"; \
-		for container in $$nginx_containers $$wordpress_containers $$mariadb_containers $$redis_containers; do \
-			docker rm $$container; \
-		done \
-	else \
-		echo "make clean: no containers were found, skipping..."; \
-	fi
-#############################################################################################################
-
-
-###################################### DELETE DATA ##########################################################
-fclean:	clean
-#	delete inception related images
-	@if [ -n "$$(docker images -aqf reference=$(name)-$(services_nginx))" ]; then \
-		docker rmi $$(docker images -aqf reference=$(name)-$(services_nginx)); \
-	else \
-		echo "make clean: no images related to $(services_nginx) were found, skipping..."; \
-	fi
-	@if [ -n "$$(docker images -aqf reference=$(name)-$(services_wordpress))" ]; then \
-		docker rmi $$(docker images -aqf reference=$(name)-$(services_wordpress)); \
-	else \
-		echo "make clean: no images related to $(services_wordpress) were found, skipping..."; \
-	fi
-	@if [ -n "$$(docker images -aqf reference=$(name)-$(services_mariadb))" ]; then \
-		docker rmi $$(docker images -aqf reference=$(name)-$(services_mariadb)); \
-	else \
-		echo "make clean: no images related to $(services_mariadb) were found, skipping..."; \
-	fi
-	@if [ -n "$$(docker images -aqf reference=$(name)-$(services_redis))" ]; then \
-		docker rmi $$(docker images -aqf reference=$(name)-$(services_redis)); \
-	else \
-		echo "make clean: no images related to $(services_redis) were found, skipping..."; \
-	fi
-
-#	'remove' docker volumes
-	@if [ -n "$$(docker volume ls -qf name=$(name))" ]; then \
-		wordpress_volume="$$(docker volume ls -qf name=$(name)_$(services_wordpress)_vol)"; \
-		mariadb_volume="$$(docker volume ls -qf name=$(name)_$(services_mariadb)_vol)"; \
-		for volume in $$wordpress_volume $$mariadb_volume; do \
-			docker volume rm $$volume; \
-		done \
-	else \
-		echo "make clean: no containers were found, skipping..."; \
-	fi
-
-#	remove docker networks
-	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_nginx)_to_host)" ]; then \
-		docker network rm $(name)_$(services_nginx)_to_host; \
-	else \
-		echo "no nginx <-> host network set up, skipping..."; \
-	fi
-	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_wordpress)_to_$(services_nginx))" ]; then \
-		docker network rm $(name)_$(services_wordpress)_to_$(services_nginx); \
-	else \
-		echo "no wordpress <-> nginx network set up, skipping..."; \
-	fi
-	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_wordpress)_to_$(services_redis))" ]; then \
-		docker network rm $(name)_$(services_wordpress)_to_$(services_redis); \
-	else \
-		echo "no wordpress <-> nginx network set up, skipping..."; \
-	fi
-	@if [ -n "$$(docker network ls -qf name=$(name)_$(services_mariadb)_to_$(services_wordpress))" ]; then \
-		docker network rm $(name)_$(services_mariadb)_to_$(services_wordpress); \
-	else \
-		echo "no mariadb <-> wordpress network set up, skipping..."; \
-	fi
-
-
-	sudo rm -rf ${HOME}/data
-#############################################################################################################
-
-
-####### REBUILD #####
-re:	fclean all		#
-#####################
-
-
-.PHONY:	all create clean stop re check-env check-config create-secret config-error
-
 #	HELPER RULES
 create-secret:	#expected arguments: filepath=<path> content=<content>
-	@test -n "$(filepath)" || (echo "missing filepath!" && exit 1)
+	@if [ -z "$(filepath)" ]; then \
+		echo "missing filepath!"; \
+		exit 1; \
+	fi
 	@if [ ! -f "$(filepath)" ];	then \
 		test -n "$(content)" || (echo "missing $(filepath) content!" && exit 1); \
 		echo -n "$(content)" > "$(filepath)"; \
@@ -212,5 +142,29 @@ create-secret:	#expected arguments: filepath=<path> content=<content>
 config-error:
 	@file="$(config)" && \
 	arg_name=$$(basename "$$file" .txt) && \
-	echo "$$file not present in secrets folder, add it manually or run 'make config $$arg_name=<value>'"
+	printf "\e[31mERROR:\e[0m check if '\e[36msecrets/$$file exists\e[0m', \
+	is not empty and does not have more than one line, you can make a new one by running 'make config $$arg_name=<value>'\n"
 	@exit 1
+
+valid-file:
+	@export file_contents="$$(cat $(arg) | tr -d '[:space:]')" file_line_num="$$(wc -l < $(arg) | tr -d '\n')"; \
+	if [ -z "$$file_contents" ] || [ -z "$$file_line_num" ] || [ "$$file_line_num" -gt 1 ] || [ "$$file_contents" != "$$(cat $(arg))" ]; then \
+		exit 1; \
+	fi
+
+valid-certificate:
+	@export cert="$$(cat secrets/wordpress.crt)" key="$$(cat secrets/wordpress.key)"; \
+	if [ -z "$$cert" ] || [ -z "$$key" ]; then \
+		echo "missing certificate"; \
+		exit 1; \
+	fi
+	@export crt="$$(openssl x509 -noout -modulus -in secrets/wordpress.crt | openssl md5)" \
+	key="$$(openssl rsa -noout -modulus -in secrets/wordpress.key | openssl md5)"; \
+	if [ "$$crt" != "$$key" ]; then \
+		echo "certificates don't match!"; \
+		exit 1; \
+	fi
+
+####################################### MISC ##################################################
+.PHONY:	all create clean stop start restart rebuild-service rebuild-all-services re \
+		check-env check-config config create-secret config-error valid-file valid-certificate
