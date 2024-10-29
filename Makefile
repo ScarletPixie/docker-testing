@@ -58,14 +58,15 @@ force-delete:
 #########################################################################################
 
 
-################################## REBUILDING ###########################################
-#	rebuild changed containers															#
-rebuild-service:																		#
-	@cd srcs && docker compose -p $(name) up -d --build $(service)						#
-rebuild-all-services:																	#
-	@cd srcs && docker compose -p $(name) up -d --build									#
-re:	fclean all																			#
-#########################################################################################
+########################################## REBUILDING ###############################################
+#	rebuild changed containers																		#
+rebuild-service:																					#
+	@ if [ -z "$(service)" ]; then echo "usage: make rebuild-service service=<name>"; exit 1; fi	#
+	@cd srcs && docker compose -p $(name) up -d --build $(service)									#
+rebuild-all-services:																				#
+	@cd srcs && docker compose -p $(name) up -d --build												#
+re:	fclean all																						#
+#####################################################################################################
 
 
 #	HELPER RULES
