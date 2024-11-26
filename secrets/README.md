@@ -14,7 +14,7 @@ make config \
 	wp_user_name="<value" \
 	wp_user_password="<value>" \
 	wp_user_email="<value>" \
-	certificate_subj="/C=<country>/ST=<state>/L=<city>/O=<organization name>/OU=<organization unit (optional)>/CN=<domain name>"
+	certificate_subj="/C=<country_code>/ST=<state>/L=<city>/O=<organization name>/OU=<organization unit (optional)>/CN=<domain name>"
 ```
 
 ###	mariadb credentials

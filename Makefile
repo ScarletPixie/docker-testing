@@ -128,15 +128,11 @@ config:
 
 
 create-secret:	#expected arguments: filepath=<path> content=<content>
-	@if [ -z "$(filepath)" ]; then \
-		echo "missing filepath!"; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(filepath)" ];	then \
-		test -n "$(content)" || (echo "missing $(filepath) content!" && exit 1); \
+	@if [ ! -z "$(filepath)" ] && [ -f "$(filepath)" ] && [ ! -z "$(content)" ]; then \
+		printf "\e[33m$(filepath) already exits\e[0m\n"; \
+	elif [ ! -z "$(filepath)" ] && [ ! -z "$(content)" ]; then \
 		echo -n "$(content)" > "$(filepath)"; \
-	else\
-		echo "$(filepath) already exists, skipping..."; \
+		printf "\e[32msuccessfully created $(filepath)\e[0m\n"; \
 	fi
 
 config-error:
