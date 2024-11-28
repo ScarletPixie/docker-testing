@@ -23,7 +23,7 @@ chmod -R 700 /etc/nginx/ssl
 #	create wordpress host
 cat << EOF > '/etc/nginx/http.d/wordpress.conf'
 server {
-	listen	443 ssl default_server;
+	listen		443 ssl default_server;
 	index		index.html index.php index.htm;
 	server_name	$DOMAIN_NAME;
 	root		/var/www/html/wordpress;
@@ -36,13 +36,15 @@ server {
 	location / {
 		try_files \$uri \$uri/ /index.php?\$args;
 	}
-		location ~ \.php$ {
+
+	location ~ \.php$ {
 		fastcgi_split_path_info ^(.+?\.php)(/.*)$;
 		include fastcgi_params;
 		fastcgi_pass    inception_wordpress:9000;
 		fastcgi_param   SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
 	}
-		location ~ /\.ht {
+
+	location ~ /\.ht {
 		deny all;
 	}
 }
