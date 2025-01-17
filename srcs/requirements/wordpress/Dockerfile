@@ -7,6 +7,9 @@ WORKDIR	/var/www/html
 ADD	https://wordpress.org/latest.zip https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /var/www/html/
 
 
+#	php version
+ARG PHP_VERSION
+
 #	set envs
 ARG	DOMAIN_NAME_ARG
 ARG	WP_TITLE_ARG
@@ -33,15 +36,15 @@ RUN	--mount=type=secret,id=wp_admin_name \
 	/root/test_environment.sh
 
 #	install necessary packages
-RUN	apk update && apk upgrade && apk add --no-cache php82-fpm wget php php-phar php-mysqli php-mbstring php-gd
+RUN	apk update && apk upgrade && apk add --no-cache php${PHP_VERSION}-fpm wget php${PHP_VERSION} php${PHP_VERSION}-phar php${PHP_VERSION}-mysqli php${PHP_VERSION}-mbstring php${PHP_VERSION}-gd
 
 #	accept non localhost connections and delete user/group directive
-RUN	sed -i "s|listen =.*|listen = 0.0.0.0:9000|" /etc/php82/php-fpm.d/www.conf && \
-	sed -i "/group = nobody/d" /etc/php82/php-fpm.d/www.conf && sed -i "/user = nobody/d" /etc/php82/php-fpm.d/www.conf
+RUN	sed -i "s|listen =.*|listen = 0.0.0.0:9000|" /etc/php${PHP_VERSION}/php-fpm.d/www.conf && \
+	sed -i "/group = nobody/d" /etc/php${PHP_VERSION}/php-fpm.d/www.conf && sed -i "/user = nobody/d" /etc/php${PHP_VERSION}/php-fpm.d/www.conf
 
 #	create non root user anse set necessary permissions
 EXPOSE		9000
-RUN			adduser --ingroup www-data -DH www-data && chown -R www-data:www-data /var/log/php82/ /var/www/html/ /etc/php82/php-fpm.d/
+RUN			adduser --ingroup www-data -DH www-data && chown -R www-data:www-data /var/log/php${PHP_VERSION}/ /var/www/html/ /etc/php${PHP_VERSION}/php-fpm.d/
 USER		www-data
 RUN			unzip latest.zip; rm latest.zip; mv wp-cli.phar wordpress
 ENTRYPOINT	[ "entrypoint.sh" ]

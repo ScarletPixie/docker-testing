@@ -18,4 +18,4 @@ if [ ! -f "/var/www/html/wordpress/wp-config.php" ]; then
 	php wp-cli.phar user create "$WP_USER_NAME" "$WP_USER_EMAIL" --role=author --user_pass="$WP_USER_PASSWORD"
 fi
 
-exec "php-fpm82" "--nodaemonize"
+exec "php-fpm83" "--nodaemonize"
