@@ -1,4 +1,4 @@
-FROM	alpine:3.19.4
+FROM	alpine:3.20
 
 #	copy necessary setup files
 COPY ./conf/setup_mariadb.sh ./tools/test_environment.sh ./tools/entrypoint.sh /etc/init.d/
