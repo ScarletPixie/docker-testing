@@ -1,6 +1,6 @@
 services:
   mariadb:
-    container_name: inception_mariadb
+    container_name: inception-mariadb
     restart: always
     build:
       context: ./requirements/mariadb/
@@ -22,7 +22,7 @@ services:
       - MARIADB_DATADIR=${MARIADB_DATADIR}
 
   wordpress:
-    container_name: inception_wordpress
+    container_name: inception-wordpress
     restart: always
     build:
       context: ./requirements/wordpress/
@@ -67,7 +67,7 @@ services:
       - DB_HOST=inception_mariadb
 
   nginx:
-    container_name: inception_nginx
+    container_name: inception-nginx
     restart: always
     build:
       context: ./requirements/nginx/

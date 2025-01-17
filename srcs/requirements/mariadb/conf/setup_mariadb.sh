@@ -28,8 +28,8 @@ mariadb <<EOF
 CREATE DATABASE IF NOT EXISTS wordpress;
 ALTER USER 'root'@'localhost' IDENTIFIED BY '$MARIADBL_ROOT_PASSWORD';
 ALTER USER 'paulhenr'@'localhost' IDENTIFIED BY '$MARIADB_USER_PASSWORD';
-CREATE USER IF NOT EXISTS '$MARIADB_USER'@'inception_wordpress.inception_mariadb_to_wordpress' IDENTIFIED BY '$MARIADB_USER_PASSWORD';
-GRANT ALL PRIVILEGES ON wordpress.* to '$MARIADB_USER'@'inception_wordpress.inception_mariadb_to_wordpress';
+CREATE USER IF NOT EXISTS '$MARIADB_USER'@'inception-wordpress.inception_mariadb_to_wordpress' IDENTIFIED BY '$MARIADB_USER_PASSWORD';
+GRANT ALL PRIVILEGES ON wordpress.* to '$MARIADB_USER'@'inception-wordpress.inception_mariadb_to_wordpress';
 
 --	taken from: https://docs.bitnami.com/aws/infrastructure/mariadb/administration/secure-server-mariadb/
 --	remove anonymous user

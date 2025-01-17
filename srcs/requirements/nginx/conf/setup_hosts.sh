@@ -40,7 +40,7 @@ server {
 	location ~ \.php$ {
 		fastcgi_split_path_info ^(.+?\.php)(/.*)$;
 		include fastcgi_params;
-		fastcgi_pass    inception_wordpress:9000;
+		fastcgi_pass    inception-wordpress:9000;
 		fastcgi_param   SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
 	}
 
