@@ -4,7 +4,6 @@ MARIADB_USER_PASSWORD="$1"
 MARIADBL_ROOT_PASSWORD="$2"
 
 #	make mariadb accept external connections
-sed -i '/bind-address=.\*/c\bind-address=0.0.0.0' /etc/my.cnf.d/mariadb-server.cnf
 sed -i '/skip-networking/d' /etc/my.cnf.d/mariadb-server.cnf
 
 #	init datadir with non root user
