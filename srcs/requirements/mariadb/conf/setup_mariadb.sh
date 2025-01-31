@@ -4,6 +4,7 @@ MARIADB_USER_PASSWORD="$1"
 MARIADBL_ROOT_PASSWORD="$2"
 
 #	make mariadb accept external connections
+# sed -i 's/^#bind-address=.*/bind-address=0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf
 sed -i '/skip-networking/d' /etc/my.cnf.d/mariadb-server.cnf
 
 #	init datadir with non root user
@@ -26,7 +27,7 @@ mariadb <<EOF
 --	basic setup --
 CREATE DATABASE IF NOT EXISTS wordpress;
 ALTER USER 'root'@'localhost' IDENTIFIED BY '$MARIADBL_ROOT_PASSWORD';
-ALTER USER 'paulhenr'@'localhost' IDENTIFIED BY '$MARIADB_USER_PASSWORD';
+ALTER USER '$MARIADB_USER'@'localhost' IDENTIFIED BY '$MARIADB_USER_PASSWORD';
 CREATE USER IF NOT EXISTS '$MARIADB_USER'@'inception-wordpress.inception_mariadb_to_wordpress' IDENTIFIED BY '$MARIADB_USER_PASSWORD';
 GRANT ALL PRIVILEGES ON wordpress.* to '$MARIADB_USER'@'inception-wordpress.inception_mariadb_to_wordpress';
 
